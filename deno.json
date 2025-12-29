@@ -2,7 +2,7 @@
   "name": "@darkbluestudios/jupyter-deno-utils",
   "version": "0.1.0",
   "license": "MIT",
-  "exports": "./main.ts",
+  "exports": "./src/main.ts",
   "tasks": {
     "doc": "deno doc --html --name='jupyter-deno-utils' ./src/",
     "test": "deno test",
