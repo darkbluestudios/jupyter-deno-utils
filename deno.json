@@ -1,6 +1,7 @@
 {
   "tasks": {
     "dev": "deno run --watch src/main.ts",
+    "doc": "deno doc --html --output='./docs' -r src",
     "test": "deno test",
     "test:watch": "deno test --watch",
     "lint": "deno lint src",
