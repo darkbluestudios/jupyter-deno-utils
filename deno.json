@@ -4,15 +4,15 @@
     "doc": "deno doc --html --output='./docs' -r src",
     "test": "deno test",
     "test:watch": "deno test --watch",
-    "lint": "deno lint src",
-    "lint:watch": "deno lint --watch src",
+    "lint": "deno lint src tests",
+    "lint:watch": "deno lint --watch src tests",
     "coverage:generate": "deno test --coverage=cov_profile",
     "coverage:report": {
       "command": "deno coverage --lcov --output=cov.lcov cov_profile/",
       "dependencies": [ "coverage:generate"]
     },
     "coverage:html": {
-      "command": "genhtml -o html_cov cov.lcov",
+      "command": "genhtml -o html_cov --ignore-errors inconsistent cov.lcov",
       "dependencies": [ "coverage:report"]
     },
     "coverage:open-only": "open html_cov/index.html",
@@ -33,6 +33,11 @@
     "@std/testing": "jsr:@std/testing@^1.0.16"
   },
   "test": {
-  	"include": ["src/**/*__spec.ts"]
+  	"include": ["src/**/*__spec.ts", "tests/**/*__spec.ts"]
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
   }
 }

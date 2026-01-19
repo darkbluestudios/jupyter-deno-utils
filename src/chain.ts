@@ -1,17 +1,23 @@
-type ForEachFn = ((value: any, value2: any, set: Set<any>) => void)
-    & ((value: any, key: any, map: Map<any, any>) => void)
-    & ((value: any, index: number, array: any[]) => void)
-    & ((value: any) => void);
 
-type FilterFn = ((value: any, value2: any, set: Set<any>) => boolean)
-    & ((value: any, key: any, map: Map<any, any>) => boolean)
-    & ((value: any, index: number, array: any[]) => boolean)
-    & ((value: any) => boolean);
+import { MappableFn, FilterFn, ReducableFn } from './types/standard.ts';
+import { JupyterRichContent } from "./types/jupyter.ts";
 
-type MappableFn = ((value: any, value2: any, set: Set<any>) => any)
-    & ((value: any, key: any, map: Map<any, any>) => any)
-    & ((value: any, index: number, array: any[]) => any)
-    & ((value: any) => any);
+/**
+ * Describes a Function applied to the Monad
+ */
+export type MonadFn = (a:any) => any;
+
+/**
+ * Function that accepts an error
+ * and does something with it as a side-effect.
+ */
+export type ErrorFn = (a:Error) => void;
+
+/**
+ * Function that accepts a value
+ * and debugs or does something with it as a side-effect
+ */
+export type DebugFn = (a:any) => void;
 
 /**
  * Simple monad like wrapper.
@@ -152,10 +158,10 @@ export class ChainContainer {
   /**
    * Custom function to run if there is any error along the chain.
    * (Scoped to the current Container when running)
-   * @type {Function}
+   * @type {ErrorFn}
    * @private
    */
-  public errorHandlerFn:Function = () => {};
+  public errorHandlerFn:ErrorFn = () => {};
 
   /**
    * Value this container stores, can be anythhing.
@@ -243,14 +249,14 @@ export class ChainContainer {
    * Historical                                         |10    
    * From Marathon to Waterloo, in order categorical    |47  
    * 
-   * @param {Function} functor - the function given the value, returning a transformed value
+   * @param {MonadFn} functor - the function given the value, returning a transformed value
    * @see {@link ChainContainer#chain} - to get the value
    * @see {@link ChainContainer#chainMap} - convenience to apply a function to each item in an array
    * @see {@link ChainContainer#chainReduce} - convenience to reduce the array
    * @see {@link ChainContainer#debug} - to see the value at a specific time
    * @returns {ChainContainer} - container with the results from functor(this.value)
    */
-  chain(functor:Function) {
+  chain(functor:MonadFn) {
     try {
       return this.update(functor(this.value));
     } catch (err:any) {
@@ -258,8 +264,9 @@ export class ChainContainer {
 
       //-- handle error throws again, line will never be called.
       // this.close();
+
+      throw err;
     }
-    return this;
   }
 
   /**
@@ -411,11 +418,11 @@ export class ChainContainer {
    * // 9
    * ```
    * 
-   * @param {Function} fn - reducer function
+   * @param {ReducableFn} fn - reducer function
    * @param {any} initialValue - initial value passed to the reducer
    * @returns {ChainContainer}
    */
-  chainReduce(fn:Function, initialValue:any) {
+  chainReduce(fn:ReducableFn, initialValue:any) {
     if (!Array.isArray(this.value)) throw Error(`chainReduce expected an array, but was passed:${this.value}`);
 
     return this.chain((value:any) => value.reduce(fn, initialValue));
@@ -444,7 +451,7 @@ export class ChainContainer {
    * @param {Function} [fn=null] - optional custom function
    * @returns {ChainContainer} - the same value as current, regardless of the result from fn.
    */
-  debug(fn:Function) {
+  debug(fn?:DebugFn) {
     if (fn) {
       fn(this.value);
     } else {
@@ -470,7 +477,7 @@ export class ChainContainer {
    * @param {Function} fn - function to execute against the current value
    * @returns {ChainContainer}
    */
-  execute(fn:Function) {
+  execute(fn:DebugFn) {
     fn(this.value);
     return this;
   }
@@ -508,7 +515,7 @@ export class ChainContainer {
    * 
    * @param {Function} errorHandler - function that is passed the error caught
    */
-  errorHandler(errorHandlerFn:Function) {
+  errorHandler(errorHandlerFn:ErrorFn) {
     this.errorHandlerFn = errorHandlerFn;
     return this;
   }
@@ -550,8 +557,8 @@ export class ChainContainer {
    * // 12
    * 
    */
-  close(functor:Function) {
-    if ((typeof functor) === 'function') {
+  close(functor?:MonadFn) {
+    if (functor) {
       this.value = this.chain(functor)?.value;
     }
 
@@ -642,7 +649,11 @@ export class ChainContainer {
     return cleanThis;
   }
 
-  [Symbol.for("Jupyter.display")]() {
+  /**
+   * Renders the value of the chain Monoid
+   * @returns {JupyterRichContent}
+   */
+  [Symbol.for("Jupyter.display")]():JupyterRichContent {
     return ({
       // Plain text content
       "text/plain": this.value

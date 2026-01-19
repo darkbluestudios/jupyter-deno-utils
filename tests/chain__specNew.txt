@@ -1,0 +1,680 @@
+import { describe, it } from '@std/testing/bdd';
+import { expect } from '@std/expect';
+
+// const { mockConsole, removeConsoleMock } = require('../__testHelper/ijsContext.ts');
+
+import { mockConsole, removeConsoleMock } from '../__testHelper/JupyterContext.ts';
+
+import {
+  assertSpyCall,
+  assertSpyCalls,
+  returnsNext,
+  Spy,
+  spy,
+  stub,
+} from "@std/testing/mock";
+
+import chain from "../chain.ts";
+
+interface ConsoleI {
+  log: Spy;
+  warn: Spy;
+  error: Spy;
+  trace: Spy;
+};
+
+function add(val1:number, val2:number):number {
+    return val1 + val2;
+}
+
+describe('testing/spy works the way I think it does', () => {
+  it('can spy a function', () => {
+    const testFn = spy();
+
+    testFn(1, 2, 3);
+    testFn();
+
+    assertSpyCalls(testFn, 2);
+
+    assertSpyCall(testFn, 0, { args: [1, 2, 3] });
+    assertSpyCall(testFn, 1, { args: [] });
+  });
+  it('can spy on a function that does something', () => {
+    const myFn = () => 3;
+
+    const testFn = spy(myFn);
+
+    const result = testFn();
+    expect(result).toBe(3);
+
+    assertSpyCalls(testFn, 1);
+    assertSpyCall(testFn, 0, ({ args: [] }));
+  });
+});
+
+describe('chain', () => {
+  describe('default', () => {
+    it('is a function', () => {
+      const chainType = typeof chain;
+      expect(chainType).toBe('function');
+    });
+    it('is a chainContainer', () => {
+      const value = 2;
+      const chainResult = chain(2);
+      const result = chainResult.value;
+      const expected = value;
+
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('can get a value from a chain', () => {
+    it('number 9', () => {
+      const value = 9;
+      const expected = 9;
+      const result = chain(value).value;
+      expect(result).toBe(expected);
+    });
+    it('null', () => {
+      const value = null;
+      const expected = null;
+      const result = chain(value).value;
+      expect(result).toBe(expected);
+    });
+    it('undefined', () => {
+      const value = undefined;
+      const expected = undefined;
+      const result = chain(value).value;
+      expect(result).toBe(expected);
+    });
+    it('string hello', () => {
+      const value = 'hello';
+      const expected = 'hello';
+      const result = chain(value).value;
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('to array', () => {
+    it('can convert an array', () => {
+
+    });
+    it('can convert a set', () => {
+      const expected = ['a', 'b', 'c'];
+      const value = new Set(expected);
+      const result = chain(value).toArray().close();
+
+      expect(result.length).toBe(value.size);
+      expect(Array.isArray(result)).toBe(true);
+    
+      //-- no duplicates
+      const resultSet = new Set(result);
+      expect(resultSet.size).toBe(expected.length);
+
+      for (let i = 0; i < expected.length; i += 1) {
+        const expectedValue = expected[i];
+        expect(resultSet.has(expectedValue)).toBe(true);
+      }
+    });
+  });
+  describe('can chain a value', () => {
+    it('a simple add', () => {
+      const addTwo = (value:any) => value + 2;
+      expect(addTwo(2)).toBe(4);
+
+      const value = 3;
+      const expected = 5;
+      const result = chain(value)
+        .chain(addTwo)
+        .value;
+      
+      expect(result).toBe(expected);
+    });
+  });
+  describe('chainMap', () => {
+    it('can apply a map to an array', () => {
+      const addTwo = (value:any) => value + 2;
+      expect(addTwo(2)).toBe(4);
+
+      const value = [1, 2, 3];
+      const expected = [3, 4, 5];
+      const result = chain(value)
+        .chainMap(addTwo)
+        .value;
+
+      expect(result).toStrictEqual(expected);
+    });
+    it('throws an error with a single value', () => {
+      const addTwo = (value:any) => value + 2;
+      const value = 3;
+      const expectedError = 'chainMap expected an array, but was passed:3';
+
+      expect(() => chain(value).chainMap(addTwo))
+        .toThrow(expectedError);
+    });
+    it('can chain a map after a value', () => {
+      const initializeCount = (size:any) => Array.from(Array(size)).map((val, index) => index);
+      expect(initializeCount(3)).toStrictEqual([0, 1, 2]);
+      const addTwo = (value:any) => value + 2;
+      expect(addTwo(2)).toBe(4);
+
+      const value = 3;
+      const expected = [2, 3, 4];
+      const result = chain(value)
+        .chain(initializeCount)
+        .chainMap(addTwo)
+        .value;
+
+      expect(result).toStrictEqual(expected);
+    });
+  });
+  describe('chainForEach', () => {
+    describe('can execute', () => {
+      it('calls jest fn and returns value', () => {
+        const fn = spy(() => 'a');
+        const result = fn();
+        const expected = 'a';
+        expect(result).toBe(expected);
+        expect(fn).toHaveBeenCalled();
+        expect(fn).toHaveBeenCalledTimes(1);
+      });
+      it('calls the functions', () => {
+        const fn = spy(() => 'a');
+        const values = [11, 12, 13];
+        const expected = [11, 12, 13]; // results from fn never are applied.
+
+        const results = chain(values)
+          .chainForEach(fn)
+          .close();
+        
+        expect(results).toEqual(expected);
+        expect(fn).toHaveBeenCalled();
+        expect(fn).toHaveBeenCalledTimes(values.length);
+
+        // let call = fn.mock.calls[0];
+        // let callExpect = [11, 11, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [11, 11, new Set([11, 12, 13])]}));
+
+        // call = fn.mock.calls[1];
+        // callExpect = [12, 12, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [12, 12, new Set([11, 12, 13])] }));
+
+        // call = fn.mock.calls[2];
+        // callExpect = [13, 13, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [13, 13, new Set([11, 12, 13])] }));
+      });
+      it('works if you pass a set', () => {
+        const fn = spy(() => 'a');
+        const values = new Set([11, 12, 13]);
+        const expected = new Set([11, 12, 13]); // results from fn never are applied.
+
+        const results = chain(values)
+          .chainForEach(fn)
+          .close();
+        
+        expect(results).toEqual(expected);
+        expect(fn).toHaveBeenCalled();
+        expect(fn).toHaveBeenCalledTimes(3);
+
+        // let call = fn.mock.calls[0];
+        // let callExpect = [11, 11, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [11, 11, new Set([11, 12, 13])]}));
+
+        // call = fn.mock.calls[1];
+        // callExpect = [12, 12, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [12, 12, new Set([11, 12, 13])] }));
+
+        // call = fn.mock.calls[2];
+        // callExpect = [13, 13, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [13, 13, new Set([11, 12, 13])] }));
+      });
+      it('works if you pass a set', () => {
+        const fn = spy(() => 'a');
+        const values = new Set([11, 12, 13]);
+        const expected = new Set([11, 12, 13]); // results from fn never are applied.
+
+        const results = chain(values)
+          .chainForEach(fn)
+          .close();
+        
+        expect(results).toEqual(expected);
+        expect(fn).toHaveBeenCalled();
+        expect(fn).toHaveBeenCalledTimes(3);
+
+        // let call = fn.mock.calls[0];
+        // let callExpect = [11, 11, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [11, 11, new Set([11, 12, 13])]}))
+
+        // call = fn.mock.calls[1];
+        // callExpect = [12, 12, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [12, 12, new Set([11, 12, 13])] }))
+
+        // call = fn.mock.calls[2];
+        // callExpect = [13, 13, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [13, 13, new Set([11, 12, 13])] }))
+      });
+      it('works if you pass a map', () => {
+        const fn = spy(() => 'a');
+        const values = new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]]);
+        const expected = new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]]); // results from fn never are applied.
+
+        const results = chain(values)
+          .chainForEach(fn)
+          .close();
+        
+        /*
+        expect(results).toEqual(expected);
+        expect(fn).toHaveBeenCalled();
+        expect(fn).toHaveBeenCalledTimes(3);
+
+        let call = fn.mock.calls[0];
+        let callExpect = [11, 'eleven', new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]])];
+        expect(call).toEqual(callExpect);
+
+        call = fn.mock.calls[1];
+        callExpect = [12, 'twelve', new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]])];
+        expect(call).toEqual(callExpect);
+
+        call = fn.mock.calls[2];
+        callExpect = [13, 'thirteen', new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]])];
+        expect(call).toEqual(callExpect);
+        */
+
+        // let call = fn.mock.calls[0];
+        // let callExpect = [11, 11, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [11, 'eleven', new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]])]}))
+
+        // call = fn.mock.calls[1];
+        // callExpect = [12, 12, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [12, 'twelve', new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]])] }))
+
+        // call = fn.mock.calls[2];
+        // callExpect = [13, 13, new Set([11, 12, 13])];
+        // expect(call).toEqual(callExpect);
+
+        assertSpyCall(fn, 0, ({ args: [13, 'thirteen', new Map([['eleven', 11], ['twelve', 12], ['thirteen', 13]])] }));
+      });
+    });
+    describe('fails', () => {
+      it('if the value passed is a string', () => {
+        const fn = spy(() => 'a');
+        const values = 1;
+        const expectedError = 'chainForEach expects an array, but was passed:1';
+
+        expect(() => chain(values).chainForEach(fn)).toThrow(expectedError);
+      });
+    });
+  });
+  describe('chainReduce', () => {
+    it('reduce works as expected', () => {
+      const reduceArray = (result:any, value:any) => result + value;
+      const value = [1, 2, 3];
+      expect(value.reduce(reduceArray, 0)).toBe(6);
+    });
+    it('can reduce an array', () => {
+      const reduceArray = (result:any, value:any) => result + value;
+      
+      const value = [1, 2, 3];
+      expect(value.reduce(reduceArray, 0)).toBe(6);
+
+      const expected = 6;
+      const result = chain(value)
+        .chainReduce(reduceArray, 0)
+        .value;
+
+      expect(result).toStrictEqual(expected);
+    });
+    it('throws an error with a single value', () => {
+      const reduceArray = (result:any, value:any) => result + value;
+      const value = 3;
+      const expectedError = 'chainReduce expected an array, but was passed:3';
+
+      expect(() => chain(value).chainReduce(reduceArray, 0))
+        .toThrow(expectedError);
+    });
+    it('can chain a map after a value', () => {
+      const initializeCount = (size:any) => Array.from(Array(size)).map((val, index) => index);
+      expect(initializeCount(3)).toStrictEqual([0, 1, 2]);
+      const reduceArray = (result:any, value:any) => result + value;
+      expect([1, 2, 3].reduce(reduceArray, 0)).toBe(6);
+      const addTwo = (value:any) => value + 2;
+      expect(addTwo(2)).toBe(4);
+
+      const value = 3;
+      const expected = 9;
+      const result = chain(value)
+        .chain(initializeCount)
+        .chainMap(addTwo)
+        .chainReduce(reduceArray, 0)
+        .value;
+
+      expect(result).toStrictEqual(expected);
+    });
+  });
+  describe('debug', () => {
+    const ORIGINAL_CONSOLE = console;
+
+    let consoleMock:ConsoleI;
+
+    Deno.test.beforeEach(() => {
+      // prepareWindow();
+      consoleMock = mockConsole();
+    });
+    Deno.test.afterEach(() => {
+      // restoreWindow();
+      removeConsoleMock();
+    });
+    Deno.test.afterAll(() => {
+    });
+    it('can detect console', () => {
+      console.log('test');
+      expect(console.log).toHaveBeenCalled();
+    });
+    it('can detect it not being called', () => {
+      expect(console.log).not.toHaveBeenCalled();
+    });
+    it('can debug a value', () => {
+      const value = 3;
+      const expected = 6;
+      const results = chain(value)
+        .chain((v:any) => v + 3)
+        .debug()
+        .value;
+      // expect(console.log).toHaveBeenCalled();
+      // expect(console.log.mock.calls[0][0]).toBe(6);
+
+      assertSpyCalls(consoleMock.log, 1);
+      assertSpyCall(consoleMock.log, 0, ({ args: [6]}));
+
+      expect(results).toBe(expected);
+    });
+    it('can support a custom debug', () => {
+      const fnMock = spy();
+      const value = 3;
+      const expected = 6;
+      const results = chain(value)
+        .chain((v:any) => v + 3)
+        .debug(fnMock)
+        .value;
+
+      assertSpyCalls(fnMock, 1);
+      assertSpyCall(fnMock, 1, ({ args: [6]}));
+
+      expect(results).toBe(expected);
+    });
+    it('example', () => {
+      const addTwo = (val:any) => val + 2;
+      expect(addTwo(3)).toBe(5);
+
+      const expected = 10;
+      const results = chain(3)
+        .chain(addTwo)
+        .chain(addTwo)
+        .debug()
+        .chain((value:any) => value + 3)
+        .value;
+      
+      expect(results).toBe(expected);
+
+      // expect(console.log.mock.calls[0][0]).toBe(7);
+
+      assertSpyCalls(consoleMock.log, 1);
+      assertSpyCall(consoleMock.log, 0, ({ args: [7]}));
+    });
+  });
+  describe('close', () => {
+    it('returns the value', () => {
+      const value = 234;
+      const expected = 234;
+      const result = chain(value).close();
+      expect(result).toBe(expected);
+    });
+    it('chains on closes', () => {
+      const value = 234;
+      const expected = 468;
+      const double = (v:any) => v + v;
+      const result = chain(value).close(double);
+      expect(result).toBe(expected);
+    });
+  });
+  describe('errorHandler', () => {
+    const ORIGINAL_CONSOLE = console;
+
+    Deno.test.beforeEach(() => {
+      // prepareWindow();
+      mockConsole();
+    });
+    Deno.test.afterEach(() => {
+      // restoreWindow();
+      removeConsoleMock();
+    });
+    Deno.test.afterAll(() => {
+      console = ORIGINAL_CONSOLE;
+    });
+    it('still closes even if no error handler', () => {
+      const customError = Error('CustomError');
+      const throwError = () => {
+        throw customError;
+      };
+
+      const value = 2;
+      const c = chain(value);
+      
+      expect(
+        () => c.chain(throwError)
+      ).toThrow('CustomError');
+    });
+    it('can use custom error handling', () => {
+      let customErrorFlag = false;
+      const catchCustomError = spy(() => {
+        customErrorFlag = true;
+      });
+      const customError = Error('CustomError');
+      const throwError = () => {
+        throw customError;
+      };
+
+      const value = 2;
+      const c = chain(value)
+        .errorHandler(catchCustomError);
+      
+      expect(
+        () => c.chain(throwError)
+      ).toThrow('CustomError');
+
+      // expect(catchCustomError).toHaveBeenCalled();
+      // expect(catchCustomError.mock.calls[0][0]).toBe(customError);
+
+      assertSpyCalls(catchCustomError, 1);
+      assertSpyCall(catchCustomError, 0, ({ args: [ customError ]}))
+
+      expect(customErrorFlag).toBe(true);
+    });
+    describe('errorHandlers are passed down', () => {
+      it('onChain', () => {
+        let customErrorFlag = false;
+        const catchCustomError = spy(() => {
+          customErrorFlag = true;
+        });
+        const customError = Error('CustomError');
+        const throwError = () => {
+          throw customError;
+        };
+
+        const identity = (v:any) => v;
+
+        const value = 2;
+        const c = chain(value)
+          .chain(identity)
+          .errorHandler(catchCustomError);
+        
+        expect(
+          () => c.chain(throwError)
+        ).toThrow('CustomError');
+
+        // expect(catchCustomError).toHaveBeenCalled();
+        // expect(catchCustomError.mock.calls[0][0]).toBe(customError);
+
+        assertSpyCalls(catchCustomError, 1);
+        assertSpyCall(catchCustomError, 0, ({ args: [ customError ]}))
+
+        expect(customErrorFlag).toBe(true);
+      });
+      it('on chainMap', () => {
+        let customErrorFlag = false;
+        const catchCustomError = spy(() => {
+          customErrorFlag = true;
+        });
+        const customError = Error('CustomError');
+        const throwError = () => {
+          throw customError;
+        };
+
+        const identity = (v:any) => v;
+
+        const value = [2];
+        const c = chain(value)
+          .chainMap(identity)
+          .errorHandler(catchCustomError);
+        
+        expect(
+          () => c.chain(throwError)
+        ).toThrow('CustomError');
+
+        // expect(catchCustomError).toHaveBeenCalled();
+        // expect(catchCustomError.mock.calls[0][0]).toBe(customError);
+
+        assertSpyCalls(catchCustomError, 1);
+        assertSpyCall(catchCustomError, 0, ({ args: [ customError ]}))
+
+        expect(customErrorFlag).toBe(true);
+      });
+      it('on chainReduce', () => {
+        let customErrorFlag = false;
+        const catchCustomError = spy(() => {
+          customErrorFlag = true;
+        });
+        const customError = Error('CustomError');
+        const throwError = () => {
+          throw customError;
+        };
+
+        const value = [2];
+        const c = chain(value)
+          .chainReduce((result:any, v:any) => result + v, 0)
+          .errorHandler(catchCustomError);
+        
+        expect(
+          () => c.chain(throwError)
+        ).toThrow('CustomError');
+
+        // expect(catchCustomError).toHaveBeenCalled();
+        // expect(catchCustomError.mock.calls[0][0]).toBe(customError);
+
+        assertSpyCalls(catchCustomError, 1);
+        assertSpyCall(catchCustomError, 0, ({ args: [ customError ]}))
+
+        expect(customErrorFlag).toBe(true);
+      });
+    });
+  });
+  describe('clone', () => {
+    describe('errorHandler', () => {
+      const ORIGINAL_CONSOLE = console;
+  
+      Deno.test.beforeEach(() => {
+        // prepareWindow();
+        mockConsole();
+      });
+      Deno.test.afterEach(() => {
+        // restoreWindow();
+        removeConsoleMock();
+      });
+      Deno.test.afterAll(() => {
+        console = ORIGINAL_CONSOLE;
+      });
+      it('passes the value along', () => {
+        const value = 234;
+        const expected = 234;
+        
+        const c = chain(value);
+
+        const c2 = c.clone();
+
+        const result = c2.close();
+
+        expect(result).toBe(expected);
+      });
+      it('can use custom error handling', () => {
+        let customErrorFlag = false;
+        const catchCustomError = spy(() => {
+          customErrorFlag = true;
+        });
+        const customError = Error('CustomError');
+        const throwError = () => {
+          throw customError;
+        };
+  
+        const value = 2;
+        const c = chain(value)
+          .errorHandler(catchCustomError);
+
+        const c2 = c.clone();
+        
+        expect(
+          () => c2.chain(throwError)
+        ).toThrow('CustomError');
+  
+        // expect(catchCustomError).toHaveBeenCalled();
+        // expect(catchCustomError.mock.calls[0][0]).toBe(customError);
+
+        assertSpyCalls(catchCustomError, 1);
+        assertSpyCall(catchCustomError, 0, ({ args: [ customError ]}))
+  
+        expect(customErrorFlag).toBe(true);
+      });
+    });
+  });
+  describe('console to string overrides', () => {
+    it('toString', () => {
+      const val = 2;
+      const expected = '{"value":2}';
+      const results = chain(val).toString();
+      expect(results).toBe(expected);
+    });
+    it('inspect', () => {
+      const val = 2;
+      const expected = '{"value":2}';
+      const results = chain(val).inspect();
+      expect(results).toBe(expected);
+    });
+    it('toJSON', () => {
+      const val = 2;
+      const results = chain(val).toJSON();
+      expect(results.value).toBe(val);
+    });
+  });
+})
+
