@@ -45,10 +45,10 @@ describe('testing/spy works the way I think it does', () => {
 describe('chain', () => {
 
   describe('default', () => {
-    let consoleMock:ConsoleI;
+    let _consoleMock:ConsoleI;
 
     beforeEach(() => {
-      consoleMock = mockConsole();
+      _consoleMock = mockConsole();
     });
     afterEach(() => {
       removeConsoleMock();
@@ -67,7 +67,6 @@ describe('chain', () => {
       expect(result).toBe(expected);
     });
     it('still works if there is an error', () => {
-      const errorSpy = spy();
       const errorThrown = new Error('some errory');
 
       const expected = 'some error';
@@ -445,10 +444,10 @@ describe('chain', () => {
 
   describe('errorHandler', () => {
 
-    let consoleMock:ConsoleI;
+    let _consoleMock:ConsoleI;
 
     beforeEach(() => {
-      consoleMock = mockConsole();
+      _consoleMock = mockConsole();
     });
     afterEach(() => {
       removeConsoleMock();
@@ -583,10 +582,10 @@ describe('chain', () => {
   });
   describe('clone', () => {
 
-    let consoleMock:ConsoleI;
+    let _consoleMock:ConsoleI;
 
     beforeEach(() => {
-      consoleMock = mockConsole();
+      _consoleMock = mockConsole();
     });
     afterEach(() => {
       removeConsoleMock();
@@ -688,10 +687,10 @@ describe('chain', () => {
   });
 
   describe('chainFlatMap', () => {
-    let consoleMock:ConsoleI;
+    let _consoleMock:ConsoleI;
 
     beforeEach(() => {
-      consoleMock = mockConsole();
+      _consoleMock = mockConsole();
     });
     afterEach(() => {
       removeConsoleMock();
