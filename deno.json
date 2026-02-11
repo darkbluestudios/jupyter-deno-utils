@@ -1,12 +1,16 @@
 {
+  "name": "@darkbluestudios/jupyter-deno-utils",
+  "version": "0.2.0",
+  "exports": "./src/main.ts",
+  "license": "MIT",
   "tasks": {
     "dev": "deno run --watch src/main.ts",
     "doc": "deno doc --html --output='./docs' -r src",
-    "test": "deno test",
-    "test:watch": "deno test --watch",
+    "test": "deno test --allow-read",
+    "test:watch": "deno test --watch --allow-read",
     "lint": "deno lint src tests",
     "lint:watch": "deno lint --watch src tests",
-    "coverage:generate": "deno test --coverage=cov_profile",
+    "coverage:generate": "deno test --coverage=cov_profile --allow-read",
     "coverage:report": {
       "command": "deno coverage --lcov --output=cov.lcov cov_profile/",
       "dependencies": [ "coverage:generate"]
@@ -25,6 +29,16 @@
       "dependencies": [
         "coverage:open"
       ]
+    },
+    "build": {
+      "command": "deno publish --dry-run",
+      "dependencies": [
+        "lint",
+        "coverage:html"
+      ]
+    },
+    "prepare": {
+      "command": "deno publish --dry-run"
     }
   },
   "imports": {

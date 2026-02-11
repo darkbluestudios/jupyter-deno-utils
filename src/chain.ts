@@ -170,7 +170,7 @@ export class ChainContainer {
    * 
    * @type {any}
    */
-  value;
+  value:any;
 
   /**
    * Constructor that creates a new Container to pass along the chain.
@@ -198,7 +198,7 @@ export class ChainContainer {
    * 
    * // 5
    */
-  clone() {
+  clone():ChainContainer {
     const result = new ChainContainer(this.value);
     result.errorHandlerFn = this.errorHandlerFn;
     return result;
@@ -256,7 +256,7 @@ export class ChainContainer {
    * @see {@link ChainContainer#debug} - to see the value at a specific time
    * @returns {ChainContainer} - container with the results from functor(this.value)
    */
-  chain(functor:MonadFn) {
+  chain(functor:MonadFn):ChainContainer {
     try {
       return this.update(functor(this.value));
     } catch (err:any) {
@@ -295,7 +295,7 @@ export class ChainContainer {
    * @param {Function} fn - applies function under every index of this.value
    * @returns {ChainContainer} 
    */
-  chainMap(fn:MappableFn) {
+  chainMap(fn:MappableFn):ChainContainer {
     if (!Array.isArray(this.value)) throw Error(`chainMap expected an array, but was passed:${this.value}`);
 
     return this.chain((value:any) => value.map(fn));
@@ -321,7 +321,7 @@ export class ChainContainer {
    * @param {Function(any):any} fn - function to execute on each element
    * @returns {ChainContainer} - chainable container
    */
-  chainForEach(fn:MappableFn) {
+  chainForEach(fn:MappableFn):ChainContainer {
     if (!Array.isArray(this.value)
       && !(this.value instanceof Set)
       && !(this.value instanceof Map)
@@ -372,7 +372,7 @@ export class ChainContainer {
    * @returns {ChainContainer}
    * @see {@link ChainContainer#chainFilter} - for other options in filtering
    */
-  chainFlatMap(fn:MappableFn) {
+  chainFlatMap(fn:MappableFn):ChainContainer {
     if (!Array.isArray(this.value)) throw Error(`chainFlatMap expects an array, but was passed:${this.value}`);
 
     return this.chain((value:any) => value.flatMap(fn));
@@ -391,7 +391,7 @@ export class ChainContainer {
    * @param {function(any):Boolean} fn - Function accepting a value and returning whether it should be included (true) or not (false)
    * @returns {ChainContainer}
    */
-  chainFilter(fn:FilterFn) {
+  chainFilter(fn:FilterFn):ChainContainer {
     if (!Array.isArray(this.value)) throw Error(`chainFilter expects an array, but was passed:${this.value}`);
 
     return this.chain((value:any) => value.filter(fn));
@@ -422,7 +422,7 @@ export class ChainContainer {
    * @param {any} initialValue - initial value passed to the reducer
    * @returns {ChainContainer}
    */
-  chainReduce(fn:ReducableFn, initialValue:any) {
+  chainReduce(fn:ReducableFn, initialValue:any):ChainContainer {
     if (!Array.isArray(this.value)) throw Error(`chainReduce expected an array, but was passed:${this.value}`);
 
     return this.chain((value:any) => value.reduce(fn, initialValue));
@@ -451,7 +451,7 @@ export class ChainContainer {
    * @param {Function} [fn=null] - optional custom function
    * @returns {ChainContainer} - the same value as current, regardless of the result from fn.
    */
-  debug(fn?:DebugFn) {
+  debug(fn?:DebugFn):ChainContainer {
     if (fn) {
       fn(this.value);
     } else {
@@ -477,7 +477,7 @@ export class ChainContainer {
    * @param {Function} fn - function to execute against the current value
    * @returns {ChainContainer}
    */
-  execute(fn:DebugFn) {
+  execute(fn:DebugFn):ChainContainer {
     fn(this.value);
     return this;
   }
@@ -515,7 +515,7 @@ export class ChainContainer {
    * 
    * @param {Function} errorHandler - function that is passed the error caught
    */
-  errorHandler(errorHandlerFn:ErrorFn) {
+  errorHandler(errorHandlerFn:ErrorFn):ChainContainer {
     this.errorHandlerFn = errorHandlerFn;
     return this;
   }
@@ -557,7 +557,7 @@ export class ChainContainer {
    * // 12
    * 
    */
-  close(functor?:MonadFn) {
+  close(functor?:MonadFn):any {
     if (functor) {
       this.value = this.chain(functor)?.value;
     }
@@ -580,7 +580,7 @@ export class ChainContainer {
    * 
    * @returns {ChainContainer}
    */
-  toArray() {
+  toArray():ChainContainer {
     return this.update(Array.from(this.value));
   }
 
@@ -592,7 +592,7 @@ export class ChainContainer {
    * @returns {ChainContainer} - new chain container to use in this cell.
    * @private
    */
-  update(newValue:any) {
+  update(newValue:any):ChainContainer {
     const result = new ChainContainer(newValue);
     result.errorHandlerFn = this.errorHandlerFn;
     return result;
@@ -603,7 +603,7 @@ export class ChainContainer {
    * @param {Error} err - the error caught
    * @private
    */
-  handleError(err:Error) {
+  handleError(err:Error):void {
     if (this.errorHandlerFn) {
       this.errorHandlerFn.apply(this, [err]);
     }
@@ -619,7 +619,7 @@ export class ChainContainer {
    * @param {any} msg - message to send
    * @private
    */
-  console(msg:any) {
+  console(msg:any):void {
     console.log(msg); // eslint-disable-line no-console
   }
 
@@ -627,7 +627,7 @@ export class ChainContainer {
    * toString replacement
    * @private
    */
-  toString() {
+  toString():string {
     const { ...cleanThis } = this; // eslint-disable-line
     return JSON.stringify(cleanThis, null, 2);
   }
@@ -636,7 +636,7 @@ export class ChainContainer {
    * inspect replacement
    * @private
    */
-  inspect() {
+  inspect():string {
     return this.toString();
   }
 
@@ -644,7 +644,7 @@ export class ChainContainer {
    * toJSON replacement
    * @private
    */
-  toJSON() {
+  toJSON():any {
     const { ...cleanThis } = this; // eslint-disable-line
     return cleanThis;
   }
