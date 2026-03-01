@@ -28,6 +28,14 @@ screen -p test -X stuff "deno run test:watch"
 screen -t debug
 sleep 1
 
+screen -t ijsUtils
+sleep 1
+screen -p ijsUtils -X stuff "cd ../jupyter-ijavascript-utils^M"
+
+
+
+
+
 screen -t "server" 10
 sleep 1
 screen -p server -X number 10
