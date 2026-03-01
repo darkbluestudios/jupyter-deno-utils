@@ -144,3 +144,12 @@ If your feature implementation is brand-new or fixing unsupposed bugs in the lib
 * [Jupyter Kernel for Deno](https://docs.deno.com/runtime/reference/cli/jupyter/)
 * [Example Deno Utils](https://github.com/rgbkrk/denotebooks)
 * [Nodejs-Polars](https://github.com/pola-rs/nodejs-polars)
+
+
+# Next items
+
+[] tableGenerator
+[] ijs
+[] htmlScript
+[] vega
+[] plantuml
