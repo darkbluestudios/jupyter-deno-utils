@@ -153,6 +153,71 @@ describe('format', () => {
       expect(results).toBe(expected);
     });
   });
+
+  describe('mapDomain', () => {
+    it('should give min range if value is below domain', () => {
+      const val = -2;
+      const domain:FormatUtils.DomainRange = [1, 10];
+      const range:FormatUtils.DomainRange = [0, 1];
+      
+      const expected = 0;
+      const result = FormatUtils.mapDomain(val, domain, range);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+    it('should give min range if value is at domain', () => {
+      const val = 0;
+      const domain:FormatUtils.DomainRange = [0, 10];
+      const range:FormatUtils.DomainRange = [0, 1];
+      
+      const expected = 0;
+      const result = FormatUtils.mapDomain(val, domain, range);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+    it('should give half if value is halfway in domain', () => {
+      const val = 5;
+      const domain:FormatUtils.DomainRange = [0, 10];
+      const range:FormatUtils.DomainRange = [0, 1];
+      
+      const expected = 0.5;
+      const result = FormatUtils.mapDomain(val, domain, range);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+    it('should give max range if value is at domain', () => {
+      const val = 12;
+      const domain:FormatUtils.DomainRange = [0, 10];
+      const range:FormatUtils.DomainRange = [0, 1];
+      
+      const expected = 1;
+      const result = FormatUtils.mapDomain(val, domain, range);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+    it('should give 5 if half of domain with range of 10', () => {
+      const val = 0.5;
+      const domain:FormatUtils.DomainRange = [0, 1];
+      const range:FormatUtils.DomainRange = [0, 10];
+      
+      const expected = 5;
+      const result = FormatUtils.mapDomain(val, domain, range);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+    it('should give Pi if half of domain and range of 2PI', () => {
+      const val = 0.5;
+      const domain:FormatUtils.DomainRange = [0, 1];
+      const range:FormatUtils.DomainRange = [0, Math.PI + Math.PI];
+      
+      const expected = Math.PI;
+      const result = FormatUtils.mapDomain(val, domain, range);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+    it('should works with 0,1 as the default range', () => {
+      const val = 12;
+      const domain:FormatUtils.DomainRange = [0, 10];
+      
+      const expected = 1;
+      const result = FormatUtils.mapDomain(val, domain, []);
+      expect(result).toBeCloseTo(expected, 5);
+    });
+  });
 });
 
 

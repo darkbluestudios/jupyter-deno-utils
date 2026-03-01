@@ -1,5 +1,7 @@
 /* eslint-disable max-len */
 
+import { Domain } from "node:domain";
+
 /**
  * Utility methods for printing and formatting values
  * 
@@ -133,6 +135,7 @@ export const ELLIPSIS = '…';
  * @param {String} str - string to be ellipsified
  * @param {Integer} [maxLen = 50] - the maximum length of str before getting ellipsified
  * @returns {String}
+ * @see https://docs.deno.com/api/deno/~/Deno.inspect
  * @example
  * utils.format.ellipsify('longName') // 'longName' (as maxLen is 50)
  * utils.format.ellipsify('longName', 8) // 'longName' (as maxLen is 8)
@@ -151,4 +154,49 @@ export function ellipsify(str:any, maxLen:number = 50):string {
     return `${cleanStr.substring(0, cleanLen)}…`;
   }
   return cleanStr;
+};
+
+export type DomainRange = [number, number];
+
+/**
+ * projects a value from a domain of expected values to a range of output values, ex: 10% of 2 Pi.
+ * 
+ * This is SUPER helpful in normalizing values, or converting values from one "range" of values to another.
+ * 
+ * @param {Number} val - value to be mapped
+ * @param {Array} domain - [min, max] - domain of possible input values
+ * @param {Array} domain.domainMin - minimum input value (anything at or below maps to rangeMin)
+ * @param {Array} domain.domainMax - maximum input value (anything at or above maps to rangeMax)
+ * @param {Array} range - [min, max] - range of values to map to
+ * @param {Array} range.rangeMin - minimum output value
+ * @param {Array} range.rangeMax - maximum output value
+ * @returns Number
+ * @see {@link module:format.clampDomain|clampDomain(value, [min, max])}
+ * @example
+ * 
+ * utils.format.mapDomain(-2, [0, 10], [0, 1])
+ * // 0   - since it is below the minimum value
+ * utils.format.mapDomain(0, [0, 10], [0, 1])
+ * // 0   - since it is the minimum value
+ * utils.format.mapDomain(5, [0, 10], [0, 1])
+ * // 0.5 - since it is 5/10
+ * utils.format.mapDomain(12, [0, 10], [0, 1])
+ * // 1   - since it is above the maximum value
+ * 
+ * utils.format.mapDomain(0.5, [0, 1], [0, 10])
+ * // 5 - since it is half of 0-1, and half of 1-10
+ * utils.format.mapDomain(0.5, [0, 1], [0, Math.PI + Math.PI])
+ * // 3.1415 or Math.PI - since it is half of 2 PI
+ */
+export function mapDomain(val:number, [domainMin, domainMax]:DomainRange, [rangeMin = 0, rangeMax = 1]):number {
+  if (val < domainMin) {
+    return rangeMin;
+  } else if (val > domainMax) {
+    return rangeMax;
+  }
+  // domainMin / val / domainMax = rangeMin / result / rangeMax
+  // (val - domainMin) / (domainMax - domainMin) = (result - rangeMin) / (rangeMax - rangeMin)
+  // (val - domainMin) * (rangeMax - rangeMin) / (domainMax - domainMin) = result - rangeMin;
+  // (val - domainMin) * (rangeMax - rangeMin) / (domainMax - domainMin) + rangeMin = result
+  return (((val - domainMin) * (rangeMax - rangeMin)) / (domainMax - domainMin)) + rangeMin;
 };
