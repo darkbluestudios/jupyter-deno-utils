@@ -200,3 +200,113 @@ export function mapDomain(val:number, [domainMin, domainMax]:DomainRange, [range
   // (val - domainMin) * (rangeMax - rangeMin) / (domainMax - domainMin) + rangeMin = result
   return (((val - domainMin) * (rangeMax - rangeMin)) / (domainMax - domainMin)) + rangeMin;
 };
+
+export function mapArrayDomain<T>(val:number, targetArray:T[], domainOptions?:number[]):T;
+export function mapArrayDomain<T>(val:number, targetArray:T[]):T;
+
+/**
+ * projects a value from a domain of expected values to an array - very useful for random distributions.
+ * 
+ * like mapping normal / gaussian distributions to an array of values with 
+ * [d3-random](https://observablehq.com/@d3/d3-random)
+ * as format.mapArrayDomain projects a value from between a range a value,
+ * and picks the corresponding value from an array.
+ * 
+ * For example:
+ * 
+ * ```
+ * require('esm-hook');
+ * d3 = require('d3');
+ * utils = require('jupyter-ijavascript-utils');
+ * 
+ * //-- create a number generator using Normal / Gaussian distribution
+ * randomGenerator = d3.randomNormal(
+ *  0.5, // mu - or centerline
+ *  0.1 // sigma - or spread of values
+ * );
+ * 
+ * randomValue = randomGenerator();
+ * // randomValue - 0.4
+ * 
+ * randomDataset = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'];
+ * 
+ * numPicks = 3; // increase to a larger number (ex: 1000) to better see distributions
+ * 
+ * //-- create an array of 3 items, each with the results from randomGenerator
+ * results = utils.array.size(numPicks, () => randomGenerator());
+ * // [ 0.6235937672428706, 0.4991359903898883, 0.4279365561645624 ]
+ * 
+ * //-- map those values to the randomDataset
+ * resultPicks = results.map(val => ({ pick: utils.format.mapArrayDomain(val, randomDataset) }));
+ * // [ { pick: 'g' }, { pick: 'e' }, { pick: 'e' } ]
+ * 
+ * //-- group them by the pick field
+ * //-- then add a new property called count - using the # of records with the same value
+ * groupedResults = utils.group.by(resultPicks, 'pick')
+ *     .reduce((list) => ({ count: list.length }));
+ * // [ { pick: 'g', count: 1 }, { pick: 'e', count: 2 } ]
+ * 
+ * //-- make a bar chart (only with 10k results)
+ * utils.vega.embed((vl) => {
+ *     return vl
+ *       .markBar()
+ *       .title('Distribution')
+ *       .data(groupedResults)
+ *       .encode(
+ *         vl.x().fieldN('pick'),
+ *         vl.y().fieldQ('count').scale({type: 'log'})
+ *       );
+ * });
+ * ```
+ * ![Screenshot of the chart above](img/randomMap_normalDistribution.png)
+ * 
+ * @param {Number} val - value to be mapped
+ * @param {Array} targetArray - array of values to pick from
+ * @param {Array} domain - [min, max] - domain of possible input values
+ * @param {Array} [domain.domainMin = 0] - minimum input value (anything at or below maps to rangeMin)
+ * @param {Array} [domain.domainMax = 1] - maximum input value (anything at or above maps to rangeMax)
+ * @returns Number
+ * @see {@link module:format.clampDomain|clampDomain(value, [min, max])}
+ * @example
+ * 
+ * //-- array of 10 values
+ * randomArray = ['a', 'b', 'c', 'd', 'e'];
+ * 
+ * utils.format.mapArrayDomain(-1, randomArray, [0, 5]);
+ * // 'a'  - since it is below the minimum value
+ * utils.format.mapArrayDomain(6, randomArray, [0, 5]);
+ * // 'e'   - since it is the minimum value
+ * 
+ * utils.format.mapArrayDomain(0.9, randomArray, [0, 5]);
+ * // 'a'
+ * utils.format.mapArrayDomain(1, randomArray, [0, 5]);
+ * // 'b'
+ * utils.format.mapArrayDomain(2.5, randomArray, [0, 5]);
+ * // 'c' 
+ * 
+ * //-- or leaving the domain of possible values value can be out:
+ * utils.format.mapArrayDomain(0.5, randomArray); // assumed [0, 1]
+ * // 'c'
+ */
+export function mapArrayDomain<T>(val:number, targetArray:T[], domainOptions?:number[]):T {
+  if (targetArray.length < 1) {
+    throw Error('mapArrayDomain: targetArray is not a populated array');
+  }
+
+  const cleanDomainOptions = domainOptions || [];
+  const [domainMin = 0, domainMax = 1] = cleanDomainOptions;
+
+  if (val <= domainMin) {
+    return targetArray[0];
+  } else if (val >= domainMax) {
+    return targetArray[targetArray.length - 1];
+  }
+
+  const targetIndex = Math.floor(mapDomain(
+    val,
+    [domainMin, domainMax],
+    [0, targetArray.length]
+  ));
+  // console.log(targetIndex);
+  return targetArray[targetIndex];
+};

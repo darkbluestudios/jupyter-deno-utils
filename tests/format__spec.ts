@@ -218,6 +218,445 @@ describe('format', () => {
       expect(result).toBeCloseTo(expected, 5);
     });
   });
+
+  describe('mapArrayDomain', () => {
+    describe('canMap', () => {
+      describe('outside the domain', () => {
+        it('below the minim', () => {
+          const expected = 0;
+          const val = -0.5;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('above the maximum', () => {
+          const expected = 4;
+          const val = 1.2;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('exactly at the minimum', () => {
+          const expected = 0;
+          const val = 0;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('exactly at the maximum', () => {
+          const expected = 4;
+          const val = 1;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+      });
+      describe('with a custom boundaries', () => {
+        describe('domain from [1,6]', () => {
+          it('below the minim', () => {
+            const expected = 0;
+            const val = 0.9;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('at the minim', () => {
+            const expected = 0;
+            const val = 1;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('just above minimum', () => {
+            const expected = 0;
+            const val = 1.00001;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('middle of first cutoff', () => {
+            const expected = 0;
+            const val = 1.5;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right before first cutoff', () => {
+            const expected = 0;
+            const val = 1.999;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('exactly at the first cutoff', () => {
+            const expected = 1;
+            const val = 2;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right after first cutoff', () => {
+            const expected = 1;
+            const val = 2.000001;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right before last cutoff', () => {
+            const expected = 3;
+            const val = 4.9999;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('exactly at the last cutoff', () => {
+            const expected = 4;
+            const val = 5;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right after last cutoff', () => {
+            const expected = 4;
+            const val = 5.0001;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right before max', () => {
+            const expected = 4;
+            const val = 5.999999999;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('at the max', () => {
+            const expected = 4;
+            const val = 6;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('above the max', () => {
+            const expected = 4;
+            const val = 6.1;
+            const domainRange = [1, 6];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+        });
+        describe('domain from [0,5]', () => {
+          it('below the minim', () => {
+            const expected = 0;
+            const val = -0.1;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('at the minim', () => {
+            const expected = 0;
+            const val = 0;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('just above minimum', () => {
+            const expected = 0;
+            const val = 0.00001;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('middle of first cutoff', () => {
+            const expected = 0;
+            const val = 0.5;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right before first cutoff', () => {
+            const expected = 0;
+            const val = 0.999;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('exactly at the first cutoff', () => {
+            const expected = 1;
+            const val = 1;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right after first cutoff', () => {
+            const expected = 1;
+            const val = 1.000001;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right in the middle', () => {
+            const expected = 2;
+            const val = 2.5;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right before last cutoff', () => {
+            const expected = 3;
+            const val = 3.9999;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('exactly at the last cutoff', () => {
+            const expected = 4;
+            const val = 4;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right after last cutoff', () => {
+            const expected = 4;
+            const val = 4.0001;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('right before max', () => {
+            const expected = 4;
+            const val = 4.999999999;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('at the max', () => {
+            const expected = 4;
+            const val = 5;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+          it('above the max', () => {
+            const expected = 4;
+            const val = 5.1;
+            const domainRange = [0, 5];
+            const targetArray = [0, 1, 2, 3, 4];
+            const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+            expect(results).toBe(expected);
+          });
+        });
+      });
+      describe('with default boundaries', () => {
+        it('below the minim', () => {
+          const expected = 0;
+          const val = -0.0001;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, []);
+          expect(results).toBe(expected);
+        });
+        it('at the minim', () => {
+          const expected = 0;
+          const val = 0;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, []);
+          expect(results).toBe(expected);
+        });
+        it('just above minimum', () => {
+          const expected = 0;
+          const val = 0.00001;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('middle of first cutoff', () => {
+          const expected = 0;
+          const val = 0.15;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('right before first cutoff', () => {
+          const expected = 0;
+          const val = 0.1999;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('exactly at the first cutoff', () => {
+          const expected = 1;
+          const val = 0.2;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('right after first cutoff', () => {
+          const expected = 1;
+          const val = 0.2000001;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('right before last cutoff', () => {
+          const expected = 3;
+          const val = 0.79999;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('exactly at the last cutoff', () => {
+          const expected = 4;
+          const val = 5;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('right after last cutoff', () => {
+          const expected = 4;
+          const val = 0.8001;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('right before max', () => {
+          const expected = 4;
+          const val = 0.9999;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('at the max', () => {
+          const expected = 4;
+          const val = 1;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+        it('above the max', () => {
+          const expected = 4;
+          const val = 1.001;
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray);
+          expect(results).toBe(expected);
+        });
+      });
+      describe('within the boundaries', () => {
+        it('just above minimum', () => {
+          const expected = 0;
+          const val = 0.00001;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('middle of first cutoff', () => {
+          const expected = 0;
+          const val = 0.1;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('right before first cutoff', () => {
+          const expected = 0;
+          const val = 0.1999;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('exactly at the first cutoff', () => {
+          const expected = 1;
+          const val = 0.2;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('right after first cutoff', () => {
+          const expected = 1;
+          const val = 0.200001;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('right before last cutoff', () => {
+          const expected = 3;
+          const val = 0.7999;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('exactly at the last cutoff', () => {
+          const expected = 4;
+          const val = 0.8;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('right after first cutoff', () => {
+          const expected = 4;
+          const val = 0.800001;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+        it('right before max', () => {
+          const expected = 4;
+          const val = 0.999999999;
+          const domainRange = [0, 1];
+          const targetArray = [0, 1, 2, 3, 4];
+          const results = FormatUtils.mapArrayDomain(val, targetArray, domainRange);
+          expect(results).toBe(expected);
+        });
+      });
+    });
+    describe('cannot map', () => {
+      it('if the target array is an empty array', () => {
+        const expected = 'mapArrayDomain: targetArray is not a populated array';
+        const val = 0.5;
+        const domainRange = [0, 1];
+        // const targetArray = [0, 1, 2, 3, 4];
+        const targetArray:any[] = [];
+        expect(() => FormatUtils.mapArrayDomain(val, targetArray, domainRange))
+          .toThrow(expected);
+      });
+    });
+  });
 });
 
 
