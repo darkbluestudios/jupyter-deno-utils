@@ -99,7 +99,7 @@ function durationLong(epochDifference: number): string {
   return `${signStr}${days} days, ${hours} hours, ${minutes} minutes, ${seconds}.${milli} seconds`;
 }
 
-const timezoneOffsetMap = new Map<string, TimezoneEntry>();
+const timezoneOffsetMap:Map<string,TimezoneEntry> = new Map<string, TimezoneEntry>();
 
 function getTimezoneEntry(timezoneStr: string): TimezoneEntry {
   const cleanTz = String(timezoneStr).toLowerCase();

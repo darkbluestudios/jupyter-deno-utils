@@ -128,7 +128,7 @@ class PlantUMLController {
   }
 }
 
-const PlantUML = new PlantUMLController();
+const PlantUML:PlantUMLController = new PlantUMLController();
 
 export default PlantUML;
 

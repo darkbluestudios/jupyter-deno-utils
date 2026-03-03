@@ -57,7 +57,7 @@ const FORMATS = {
 
 const PI2 = Math.PI * 0.5;
 
-const INTERPOLATION_STRATEGIES = {
+export const INTERPOLATION_STRATEGIES = {
   linear: (a: number, b: number, pct: number) => a + (b - a) * pct,
   easeInOut: (a: number, b: number, pct: number):number =>
     a + (b - a) * (Math.cos(pct * Math.PI + Math.PI) * 0.5 + 0.5),
@@ -251,7 +251,7 @@ function generateSequence(
   );
 }
 
-const SEQUENCE = [
+export const SEQUENCE = [
   "#4e79a7",
   "#f28e2c",
   "#e15759",
@@ -264,11 +264,11 @@ const SEQUENCE = [
   "#bab0ab"
 ];
 
+// @TODO
 const ColorUtils = {
   COLOR_VALIDATION,
   FORMATS,
   INTERPOLATION_STRATEGIES,
-  SEQUENCE,
   get defaultFormat() {
     return defaultFormat;
   },
