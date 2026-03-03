@@ -591,6 +591,6 @@ class TableGenerator {
 
 export default TableGenerator;
 
-export const newTable = function table(...rest) {
+export const newTable = function table(...rest):TableGenerator {
   return new TableGenerator(...rest);
 }

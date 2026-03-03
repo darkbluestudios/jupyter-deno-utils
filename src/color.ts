@@ -59,11 +59,11 @@ const PI2 = Math.PI * 0.5;
 
 const INTERPOLATION_STRATEGIES = {
   linear: (a: number, b: number, pct: number) => a + (b - a) * pct,
-  easeInOut: (a: number, b: number, pct: number) =>
+  easeInOut: (a: number, b: number, pct: number):number =>
     a + (b - a) * (Math.cos(pct * Math.PI + Math.PI) * 0.5 + 0.5),
-  easeIn: (a: number, b: number, pct: number) =>
+  easeIn: (a: number, b: number, pct: number):number =>
     a + (b - a) * (1 - Math.cos(pct * PI2)),
-  easeOut: (a: number, b: number, pct: number) =>
+  easeOut: (a: number, b: number, pct: number):number =>
     a + (b - a) * Math.sin(pct * PI2)
 };
 
