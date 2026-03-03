@@ -1725,7 +1725,6 @@ describe('format', () => {
     });
   });
   describe('consoleLines', () => {
-    const ORIGINAL_CONSOLE = global.console;
     let _consoleMock:ConsoleI;
 
     beforeEach(() => {

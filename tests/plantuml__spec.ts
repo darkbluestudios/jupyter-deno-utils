@@ -1,10 +1,12 @@
-import { describe, it, beforeEach, afterAll } from "@std/testing/bdd";
+import { describe, it, beforeEach, afterEach } from "@std/testing/bdd";
 import { expect } from "@std/expect";
 import { assertSpyCalls, spy, type Spy } from "@std/testing/mock";
+import { ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
+import { getContext } from "../src/plantuml.ts";
 import PlantUML from "../src/plantuml.ts";
+import { mock } from "node:test";
 
 const OLD_FETCH = globalThis.fetch;
-const OLD_CONSOLE = globalThis.console;
 
 function createFakeResponse(body: string | ArrayBuffer): Response {
   return {
@@ -123,43 +125,37 @@ describe("PlantUML", () => {
   });
 
   describe("can render an image", () => {
-    let mockConsole: { log: Spy<unknown, unknown[], unknown> };
-    const displayStub = {
-      png: spy(() => {}),
-      svg: spy(() => {})
-    };
+    const CONTEXT = getContext();
+    const getSpy = function(fn:Function):Spy {
+      return fn as Spy;
+    }
 
     beforeEach(() => {
-      mockConsole = { log: spy() };
-      (
-        globalThis as unknown as {
-          $$?: { png: (b64: string) => void; svg: (s: string) => void };
-          console?: { log: (msg: string) => void };
-        }
-      ).$$ = displayStub;
-      (
-        globalThis as unknown as { console: typeof mockConsole }
-      ).console = { ...OLD_CONSOLE, ...mockConsole };
+      
+      CONTEXT.console.log = spy(console, 'log');
+      CONTEXT.$$.png = spy(CONTEXT.$$, 'png');
+      CONTEXT.$$.svg = spy(CONTEXT.$$, 'svg');
 
       (globalThis as unknown as { fetch: (url: string) => Promise<Response> }).fetch = () =>
         Promise.resolve(createFakeResponse("<svg/>"));
     });
-    afterAll(() => {
-      delete (globalThis as unknown as { $$?: unknown }).$$;
-      (globalThis as unknown as { console: typeof OLD_CONSOLE }).console = OLD_CONSOLE;
-      (globalThis as unknown as { fetch: typeof OLD_FETCH }).fetch = OLD_FETCH;
-    });
+    afterEach(() => {
+      const CONTEXT = getContext();
 
-    it("is in ijs context by default", () => {
-      expect((globalThis as unknown as { $$?: unknown }).$$).toBeTruthy();
-    });
-    it("can be not in ijs context", () => {
-      delete (globalThis as unknown as { $$?: unknown }).$$;
-      expect((globalThis as unknown as { $$?: unknown }).$$).toBeUndefined();
+      const restoreSpy = function restoreSpy(fn:Function):void {
+        const spyFn:Spy = fn as Spy;
+        spyFn.restore();
+      };
+
+      restoreSpy(CONTEXT.console.log);
+      restoreSpy(CONTEXT.$$.png);
+      restoreSpy(CONTEXT.$$.svg);
+      
+      (globalThis as unknown as { fetch: typeof OLD_FETCH }).fetch = OLD_FETCH;
     });
     it("can mock the console", () => {
       console.log("test");
-      assertSpyCalls(mockConsole.log, 1);
+      assertSpyCalls(getSpy(CONTEXT.console.log), 1);
     });
     it("as svg with options", async () => {
       const plantUMLText = "Some PlantUML Text";
@@ -199,8 +195,9 @@ describe("PlantUML", () => {
       PlantUML.host = "www.plantumlServer.com";
 
       await PlantUML.render(plantUMLText, options);
-      assertSpyCalls(mockConsole.log, 1);
-      expect(mockConsole.log.calls[0].args[0]).toContain("url:");
+      assertSpyCalls(getSpy(CONTEXT.console.log), 1);
+      expect(getSpy(CONTEXT.console.log).calls[0].args[0]).toContain("url:");
+      // expect(mockConsole.log.calls[0].args[0]).toContain("url:");
     });
     it("sends console if using debug", async () => {
       const plantUMLText = "Some PlantUML Text";
@@ -210,8 +207,8 @@ describe("PlantUML", () => {
       PlantUML.host = "www.plantumlServer.com";
 
       await PlantUML.render(plantUMLText, options);
-      assertSpyCalls(mockConsole.log, 1);
-      expect(mockConsole.log.calls[0].args[0]).toContain("url:");
+      assertSpyCalls(getSpy(CONTEXT.console.log), 1);
+      expect(getSpy(CONTEXT.console.log).calls[0].args[0]).toContain("url:");
     });
   });
 });

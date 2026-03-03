@@ -20,11 +20,38 @@ export interface PlantUMLOptions {
 
 /** Display context: $$.png / $$.svg and console.log */
 interface PlantUMLDisplayContext {
-  $$: { png: (b64: string) => void; svg: (s: string) => void };
+  $$: { 
+    png: (pngBody: string) => void;
+    svg: (svgBody: string) => void
+  };
   console: { log: (msg: string) => void };
 }
 
-const emptyPlantUML = "@startuml\n@enduml";
+const JUPYTER_DISPLAY = Symbol.for("Jupyter.display");
+const renderSymbol = function renderSymbol(mimeType: string, value: unknown) {
+  return {
+    [JUPYTER_DISPLAY]() {
+      const obj: Record<string, unknown> = {};
+      obj[mimeType] = value;
+    }
+  };
+};
+
+const CONTEXT:PlantUMLDisplayContext = {
+  console: {
+    log: console.log
+  },
+  $$: {
+    png(pngBody: string) {
+      return renderSymbol("image/png", pngBody);
+    },
+    svg(svgBody: string) {
+      return renderSymbol("image/svg+xml", svgBody);
+    }
+  }
+};
+
+const emptyPlantUML = `@startuml\n@enduml`;
 
 let defaultFormat: PlantUMLFormat = "svg";
 
@@ -46,37 +73,24 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function getContext(): PlantUMLDisplayContext | null {
-  const g = globalThis as unknown as {
-    $$?: { png?: (b64: string) => void; svg?: (s: string) => void };
-    console?: { log?: (msg: string) => void };
-  };
-  const $$ = g?.$$;
-  const cons = g?.console;
-  if ($$ && typeof $$.png === "function" && typeof $$.svg === "function" && cons && typeof cons.log === "function") {
-    return { $$: $$ as PlantUMLDisplayContext["$$"], console: cons as PlantUMLDisplayContext["console"] };
-  }
-  return null;
-}
-
-const PlantUML = {
-  protocol: "http://" as string,
-  host: "localhost:8080" as string,
+class PlantUMLController {
+  protocol:string = "http://";
+  host:string = "localhost:8080";
 
   reset(): void {
     defaultFormat = "svg";
     PlantUML.protocol = "http://";
     PlantUML.host = "localhost:8080";
-  },
+  }
 
   getDefaultFormat(): PlantUMLFormat {
     return defaultFormat;
-  },
+  }
 
   setDefaultFormat(format: string): PlantUMLFormat {
     defaultFormat = checkFormat(format);
     return defaultFormat;
-  },
+  }
 
   generateURL(plantUMLText?: string | null, plantUMLOptions?: PlantUMLOptions | null): string {
     const cleanOptions = plantUMLOptions ?? {};
@@ -85,7 +99,7 @@ const PlantUML = {
     const plantUMLTextStr = plantUMLText ?? emptyPlantUML;
     const encodedStr = plantumlEncoder.encode(plantUMLTextStr);
     return `${PlantUML.protocol}${PlantUML.host}/plantuml/${format}/${encodedStr}`;
-  },
+  }
 
   async render(plantUMLText?: string | null, plantUMLOptions?: PlantUMLOptions | null): Promise<void> {
     const cleanOptions = plantUMLOptions ?? {};
@@ -93,10 +107,7 @@ const PlantUML = {
     const { showURL = false, debug = false } = cleanOptions;
     format = checkFormat(format);
 
-    const ctx = getContext();
-    if (!ctx) {
-      return;
-    }
+    const ctx = CONTEXT;
     const { $$, console: cons } = ctx;
 
     const targetURL = PlantUML.generateURL(plantUMLText, plantUMLOptions);
@@ -115,6 +126,10 @@ const PlantUML = {
     const svgStr = await result.text();
     $$.svg(svgStr);
   }
-};
+}
+
+const PlantUML = new PlantUMLController();
 
 export default PlantUML;
+
+export const getContext = () => CONTEXT;
