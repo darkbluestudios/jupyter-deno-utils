@@ -1,0 +1,1370 @@
+import { describe, it } from "@std/testing/bdd";
+import { expect } from "@std/expect";
+import AggregateUtils from "../src/aggregate.ts";
+
+const initializeWeather = () => [
+  { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87 },
+  { id: 0, city: 'Seattle',  month: 'Apr', precip: 2.68 },
+  { id: 2, city: 'Seattle',  month: 'Dec', precip: 5.31 },
+  { id: 3, city: 'New York', month: 'Apr', precip: 3.94 },
+  { id: 4, city: 'New York', month: 'Aug', precip: 4.13 },
+  { id: 5, city: 'New York', month: 'Dec', precip: 3.58 },
+  { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62 },
+  { id: 8, city: 'Chicago',  month: 'Dec', precip: 2.56 },
+  { id: 7, city: 'Chicago',  month: 'Aug', precip: 3.98 }
+];
+
+const floatEpsilon = (number, isAbove) => number + (isAbove ? 1 : -1) * 0.000001;
+
+describe('AggregateUtils', () => {
+  describe('extent', () => {
+    it('finds a min value, with a property', () => {
+      const source = initializeWeather();
+      const expected = { min: 0.87, max: 5.31 };
+      const results = AggregateUtils.extent(source, 'precip');
+      expect(results).toEqual(expected);
+    });
+    it('finds a extent value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = { min: 0.87, max: 5.31 };
+      const results = AggregateUtils.extent(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds a extent value, with null sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = { min: 0.87, max: 5.31 };
+      const results = AggregateUtils.extent(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds a extent value, with a function sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = { min: 0.87, max: 5.31 };
+      const results = AggregateUtils.extent(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('min', () => {
+    it('finds a min value, with a property', () => {
+      const source = initializeWeather();
+      const expected = 0.87;
+      const results = AggregateUtils.min(source, 'precip');
+      expect(results).toEqual(expected);
+    });
+    it('finds a minimum value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 0.87;
+      const results = AggregateUtils.min(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds a minimum value, with null sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 0.87;
+      const results = AggregateUtils.min(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds a minimum value, with a function sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 0.87;
+      const results = AggregateUtils.min(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('max', () => {
+    it('finds a max value, with a property', () => {
+      const source = initializeWeather();
+      const expected = 5.31;
+      const results = AggregateUtils.max(source, 'precip');
+      expect(results).toEqual(expected);
+    });
+    it('finds a maximum value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 5.31;
+      const results = AggregateUtils.max(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds a maximum value, with null sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 5.31;
+      const results = AggregateUtils.max(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds a maximum value, with a function sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 5.31;
+      const results = AggregateUtils.max(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('coalesce', () => {
+    describe('examples', () => {
+      it('separate props', () => {
+        const collection = [
+          { first: 'john' },
+          { last: 'doe' },
+          { age: 23 }
+        ];
+        const results = AggregateUtils.coalesce(collection);
+        const expected = { first: 'john', last: 'doe', age: 23 };
+        expect(results).toEqual(expected);
+      });
+      it('different keys on different objects', () => {
+        const collection = [
+          { first: 'john', last: 'doe', age: 23, failedClass: null },
+          { first: 'jane', last: 'doe', favouriteColor: 'blue', failedClass: null },
+          null,
+          { first: 'bill', favouriteColor: 'red', failedClass: 'asbx-dx2' }
+        ];
+        const results = AggregateUtils.coalesce(collection);
+        //-- now we can understand the types of values we got for each property type
+        const expected = { first: 'john', last: 'doe', age: 23, favouriteColor: 'blue', failedClass: 'asbx-dx2' };
+        expect(results).toEqual(expected);
+      });
+      it('custom evaluation fn', () => {
+        const collection = [{ num: null, numB: 1 }, { num: 23, numB: 20 }, { num: 2, numB: 4 }, { num: 100, numB: 6 }];
+        const maxCoalesce = (propertyValue, current) => propertyValue && (!current || propertyValue > current);
+        const results = AggregateUtils.coalesce(collection, maxCoalesce);
+        const expected = { num: 100, numB: 20 };
+        expect(results).toEqual(expected);
+      });
+    });
+    describe('defaultEvalFn', () => {
+      describe('should be true', () => {
+        it('if only passed a value', () => {
+          const entryValue = 1;
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue);
+          expect(results).toBe(expected);
+        });
+        it('if the value is 0.000001', () => {
+          const entryValue = 0.000001;
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is 1', () => {
+          const entryValue = 1;
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is -1', () => {
+          const entryValue = -1;
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is an array [0]', () => {
+          const entryValue = [0];
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is an array ["str"]', () => {
+          const entryValue = ['str'];
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is an array ["a", "b"]', () => {
+          const entryValue = ['a', 'b'];
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value a date just after epoch', () => {
+          const entryValue = new Date(10);
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is today', () => {
+          const entryValue = new Date();
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is a map', () => {
+          const entryValue = new Map([['first', 'john']]);
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is a set', () => {
+          const entryValue = new Set([0]);
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is a set', () => {
+          const entryValue = new Set(['str']);
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = true;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+      });
+      describe('should be false', () => {
+        it('if the value is null', () => {
+          const entryValue = null;
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = false;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is undefined', () => {
+          const entryValue = undefined;
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = false;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is 0', () => {
+          const entryValue = 0;
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = false;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is an empty array', () => {
+          const entryValue = [];
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = false;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+        it('if the value is an empty date', () => {
+          const entryValue = new Date(0);
+          const currentValue = undefined;
+          const propName = 'cuca';
+          const entry = {};
+          const expected = false;
+          const results = AggregateUtils.coalesceDefaultEvaluationFn(entryValue, currentValue, propName, entry);
+          expect(results).toBe(expected);
+        });
+      });
+    });
+    describe('can coalesce', () => {
+      describe('with default evalFn', () => {
+        it('with a simple object', () => {
+          const collection = [{ val: 1 }];
+          const expected = { val: 1 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('with a list of simple objects - value first', () => {
+          const collection = [{ val: 1 }, { val: null }, { val: 2 }];
+          const expected = { val: 1 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('with a list of simple objects - value second', () => {
+          const collection = [{ val: null }, { val: 1 }, { val: 2 }];
+          const expected = { val: 1 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('with a list of simple objects - value last', () => {
+          const collection = [{ val: undefined }, { val: null }, { val: 1 }];
+          const expected = { val: 1 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('with a list of simple objects - and a null', () => {
+          const collection = [{ val: undefined }, null, { val: 1 }];
+          const expected = { val: 1 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('does not allow for updating the coalesced value', () => {
+          const collection = [{ val: undefined }, { val: 1 }, { val: 2 }];
+          const expected = { val: 1 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('with multiple properties', () => {
+          const collection = [{ valA: 1 }, { valB: 2 }, { valA: 'a', valB: 'b' }];
+          const expected = { valA: 1, valB: 2 };
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+      });
+      describe('with problematic standard objects', () => {
+        it('arrays', () => {
+          const collection = [[1]];
+          const expected = {};
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('maps', () => {
+          const collection = [new Map([['first', 'john']])];
+          const expected = {};
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+        it('sets', () => {
+          const collection = [new Set([1])];
+          const expected = {};
+          const results = AggregateUtils.coalesce(collection);
+          expect(results).toEqual(expected);
+        });
+      });
+    });
+    describe('if passed a custom evalFn', () => {
+      const simpleEval = (val, currentVal) => currentVal ? false : val ? true : false;
+      it('with a simple object', () => {
+        const collection = [{ val: 1 }];
+        const expected = { val: 1 };
+        const results = AggregateUtils.coalesce(collection, simpleEval);
+        expect(results).toEqual(expected);
+      });
+      it('with a list of simple objects - value first', () => {
+        const collection = [{ val: 1 }, { val: null }, { val: 2 }];
+        const expected = { val: 1 };
+        const results = AggregateUtils.coalesce(collection, simpleEval);
+        expect(results).toEqual(expected);
+      });
+      it('with a list of simple objects - value second', () => {
+        const collection = [{ val: null }, { val: 1 }, { val: 2 }];
+        const expected = { val: 1 };
+        const results = AggregateUtils.coalesce(collection, simpleEval);
+        expect(results).toEqual(expected);
+      });
+      it('with a list of simple objects - value last', () => {
+        const collection = [{ val: undefined }, { val: null }, { val: 1 }];
+        const expected = { val: 1 };
+        const results = AggregateUtils.coalesce(collection, simpleEval);
+        expect(results).toEqual(expected);
+      });
+      it('can allow for updating the coalesced value', () => {
+        const collection = [{ val: undefined }, { val: 1 }, { val: 2 }];
+        const expected = { val: 2 };
+        const results = AggregateUtils.coalesce(collection, (val) => val ? true : false);
+        expect(results).toEqual(expected);
+      });
+      it('with multiple properties', () => {
+        const collection = [{ valA: 1 }, { valB: 2 }, { valA: 'a', valB: 'b' }];
+        const expected = { valA: 1, valB: 2 };
+        const results = AggregateUtils.coalesce(collection, simpleEval);
+        expect(results).toEqual(expected);
+      });
+    });
+    describe('cannot coalesce', () => {
+      it('if passed a null', () => {
+        const collection = null;
+        const expected = null;
+        const results = AggregateUtils.coalesce(collection);
+        expect(results).toEqual(expected);
+      });
+      it('if passed undefined', () => {
+        const collection = undefined;
+        const expected = undefined;
+        const results = AggregateUtils.coalesce(collection);
+        expect(results).toEqual(expected);
+      });
+      it('if passed a literal number', () => {
+        const collection = 10;
+        const expected = 10;
+        const results = AggregateUtils.coalesce(collection);
+        expect(results).toEqual(expected);
+      });
+      it('if passed a literal string', () => {
+        const collection = 'cuca';
+        const expected = 'cuca';
+        const results = AggregateUtils.coalesce(collection);
+        expect(results).toEqual(expected);
+      });
+    });
+  });
+
+  describe('sum', () => {
+    it('finds the sum value, with a property', () => {
+      const source = initializeWeather();
+      const expected = 30.67;
+      const results = AggregateUtils.sum(source, 'precip');
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+    it('finds the sum value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 30.67;
+      const results = AggregateUtils.sum(source);
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+    it('finds the sum value, with null sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 30.67;
+      const results = AggregateUtils.sum(source, null);
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+    it('finds the sum value, with a function sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 30.67;
+      const results = AggregateUtils.sum(source, (r) => r);
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+  });
+
+  describe('difference', () => {
+    it('finds the difference in numbers, with a property', () => {
+      const source = initializeWeather();
+      const expected = 4.44;
+      const results = AggregateUtils.difference(source, 'precip');
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+    it('finds the difference in numbers, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 4.44;
+      const results = AggregateUtils.difference(source);
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+    it('finds the difference in numbers, with null sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 4.44;
+      const results = AggregateUtils.difference(source, null);
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+    it('finds the difference in numbers, with a function sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 4.44;
+      const results = AggregateUtils.difference(source, (r) => r);
+      expect(results).toBeLessThan(floatEpsilon(expected, true));
+      expect(results).toBeGreaterThan(floatEpsilon(expected, false));
+    });
+  });
+
+  describe('first', () => {
+    it('finds the first value, with a property', () => {
+      const source = initializeWeather();
+      const expected = 0.87;
+      const results = AggregateUtils.first(source, 'precip');
+      expect(results).toEqual(expected);
+    });
+    it('finds the first value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.33, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 0.87;
+      const results = AggregateUtils.first(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds the first value, with a new first value', () => {
+      const source = [5.33, 0.87, 2.68, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 5.33;
+      const results = AggregateUtils.first(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds the first value, with a few nulls before', () => {
+      const source = [null, null, 5.33, 0.87, 2.68, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 5.33;
+      const results = AggregateUtils.first(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds null if no values found', () => {
+      const source = [];
+      const expected = null;
+      const results = AggregateUtils.first(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds null if only nulls are found', () => {
+      const source = [null, null];
+      const expected = null;
+      const results = AggregateUtils.first(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds a first value, with null sent', () => {
+      const source = [0.87, 2.68, 5.33, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 0.87;
+      const results = AggregateUtils.first(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds a first value, with a function sent', () => {
+      const source = [0.87, 2.68, 5.33, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 0.87;
+      const results = AggregateUtils.first(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('avgMean', () => {
+    it('finds a mean average value, with a property', () => {
+      const source = initializeWeather();
+      const expected = 3.4078;
+      const results = AggregateUtils.avgMean(source, 'precip');
+      expect(results).toBeLessThan(expected + 0.001);
+      expect(results).toBeGreaterThan(expected - 0.001);
+    });
+    it('finds the mean average value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.33, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 3.41;
+      const results = AggregateUtils.avgMean(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds a mean average value, with null sent', () => {
+      const source = [0.87, 2.68, 5.33, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 3.41;
+      const results = AggregateUtils.avgMean(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds a mean average value, with a function sent', () => {
+      const source = [0.87, 2.68, 5.33, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 3.41;
+      const results = AggregateUtils.avgMean(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('avMedian', () => {
+    it('finds a median average value, with a property', () => {
+      const source = initializeWeather();
+      const expected = 3.62;
+      const results = AggregateUtils.avgMedian(source, 'precip');
+      expect(results).toEqual(expected);
+    });
+    it('finds the median average value, with no argument sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 3.62;
+      const results = AggregateUtils.avgMedian(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds a median average value, with null sent', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 3.62;
+      const results = AggregateUtils.avgMedian(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds a median average value, with an odd number of rows', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 3.62;
+      const results = AggregateUtils.avgMedian(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+    it('finds a median average value, with an even number of rows', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56];
+      const expected = 3.6;
+      const results = AggregateUtils.avgMedian(source, (r) => r);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('length', () => {
+    it('finds the length of an array', () => {
+      const source = [0.87, 2.68, 5.31, 3.94, 4.13, 3.58, 3.62, 2.56, 3.98];
+      const expected = 9;
+      const results = AggregateUtils.length(source);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('unique', () => {
+    it('finds the unique values, with a property', () => {
+      const source = initializeWeather();
+      const expected = ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.unique(source, 'city');
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, with a uniquifier passed', () => {
+      const source = [
+        { id: 1, ts: new Date(2022, 2, 1, 9, 0) }, { id: 1, ts: new Date(2022, 2, 1, 10, 0) },
+        { id: 1, ts: new Date(2022, 2, 2, 9, 0) }, { id: 1, ts: new Date(2022, 2, 2, 10, 0) },
+        { id: 1, ts: new Date(2022, 2, 3, 9, 0) }, { id: 1, ts: new Date(2022, 2, 3, 10, 0) },
+        { id: 1, ts: null }
+      ];
+
+      //-- using dates won't work because they are Objects
+      //-- and new Date(2022,2,2) !== new Date(2022,2,2)
+
+      const uniquifier = (d) => d ? d.toISOString().slice(0, 10) : null;
+
+      const expected = ['2022-03-01', '2022-03-02', '2022-03-03', null];
+
+      const results = AggregateUtils.unique(source, 'ts', uniquifier);
+
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, with property', () => {
+      const source = initializeWeather();
+      const expected = ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.unique(source, 'city');
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, with no argument sent', () => {
+      const source = initializeWeather().map((r) => r.city);
+      const expected = ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.unique(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, with null sent', () => {
+      const source = initializeWeather().map((r) => r.city);
+      const expected = ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.unique(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, with a function sent', () => {
+      const source = initializeWeather();
+      const expected = ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.unique(source, (r) => r.city);
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, an array sent', () => {
+      const source = [{ values: [0, 1, 2] },
+        { values: [2, 3, 4] },
+        { values: [4, 5, 6] }
+      ];
+      const expected = [0, 1, 2, 3, 4, 5, 6];
+      const results = AggregateUtils.unique(source, 'values');
+      expect(results).toEqual(expected);
+    });
+    it('finds the unique values, an array of set values sent', () => {
+      const source = [{ values: new Set([0, 1, 2]) },
+        { values: new Set([2, 3, 4]) },
+        { values: new Set([4, 5, 6]) }
+      ];
+      const expected = [0, 1, 2, 3, 4, 5, 6];
+      const results = AggregateUtils.unique(source, 'values');
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('distinct', () => {
+    it('counts the unique values, with a property', () => {
+      const source = initializeWeather();
+      const expected = 3; // ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.distinct(source, 'city');
+      expect(results).toEqual(expected);
+    });
+    it('counts the unique values, with a uniquifier passed', () => {
+      const source = [
+        { id: 1, ts: new Date(2022, 2, 1, 9, 0) }, { id: 1, ts: new Date(2022, 2, 1, 10, 0) },
+        { id: 1, ts: new Date(2022, 2, 2, 9, 0) }, { id: 1, ts: new Date(2022, 2, 2, 10, 0) },
+        { id: 1, ts: new Date(2022, 2, 3, 9, 0) }, { id: 1, ts: new Date(2022, 2, 3, 10, 0) },
+        { id: 1, ts: null }
+      ];
+
+      //-- using dates won't work because they are Objects
+      //-- and new Date(2022,2,2) !== new Date(2022,2,2)
+
+      const uniquifier = (d) => d ? d.toISOString().slice(0, 10) : null;
+
+      const expected = 4; // ['2022-03-01', '2022-03-02', '2022-03-03', null];
+
+      const results = AggregateUtils.distinct(source, 'ts', uniquifier);
+
+      expect(results).toEqual(expected);
+    });
+    it('counts the unique values, with property', () => {
+      const source = initializeWeather();
+      const expected = 3; // ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.distinct(source, 'city');
+      expect(results).toEqual(expected);
+    });
+    it('counts the unique values, with no argument sent', () => {
+      const source = initializeWeather().map((r) => r.city);
+      const expected = 3; // ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.distinct(source);
+      expect(results).toEqual(expected);
+    });
+    it('counts the unique values, with null sent', () => {
+      const source = initializeWeather().map((r) => r.city);
+      const expected = 3; // ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.distinct(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('counts the unique values, with a function sent', () => {
+      const source = initializeWeather();
+      const expected = 3; // ['Seattle', 'New York', 'Chicago'];
+      const results = AggregateUtils.distinct(source, (r) => r.city);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('countMap', () => {
+    it('does not blow up if the collection is empty', () => {
+      const source = [];
+      const expected = new Map();
+      const results = AggregateUtils.countMap(source);
+      expect(results).toEqual(expected);
+    });
+    it('counts null values and single values', () => {
+      const source = [null, undefined, 'a', null, 'a'];
+      const expected = new Map([[null, 3], ['a', 2]]);
+      const results = AggregateUtils.countMap(source);
+      expect(results).toEqual(expected);
+    });
+    it('can count unique values', () => {
+      const source = ['apple', 'orange', 'banana'];
+      const expected = new Map([['apple', 1], ['orange', 1], ['banana', 1]]);
+      const results = AggregateUtils.countMap(source);
+      expect(results).toEqual(expected);
+    });
+    it('can count duplicate values', () => {
+      const source = ['apple', 'orange', 'banana', 'orange', 'banana'];
+      const expected = new Map([['apple', 1], ['orange', 2], ['banana', 2]]);
+      const results = AggregateUtils.countMap(source);
+      expect(results).toEqual(expected);
+    });
+    it('can count duplicate dates', () => {
+      const source = [
+        new Date(2022, 0, 1, 9),
+        new Date(2022, 0, 1, 9, 30),
+        new Date(2022, 0, 1, 10, 0),
+        new Date(2022, 0, 2, 9),
+        new Date(2022, 0, 2, 9, 30),
+        new Date(2022, 0, 2, 10, 0),
+        new Date(2022, 0, 3, 10, 0),
+      ];
+      const expected = new Map([['2022-01-01', 3], ['2022-01-02', 3], ['2022-01-03', 1]]);
+      const results = AggregateUtils.countMap(source, (d) => d.toISOString().slice(0, 10));
+      expect(results).toEqual(expected);
+    });
+    it('can count dates with uniquifier', () => {
+      const source = [
+        new Date(2022, 0, 1, 9),
+        new Date(2022, 0, 1, 9, 30),
+        new Date(2022, 0, 1, 10, 0),
+        new Date(2022, 0, 2, 9),
+        new Date(2022, 0, 2, 9, 30),
+        new Date(2022, 0, 2, 10, 0),
+        new Date(2022, 0, 3, 10, 0),
+        new Date(2022, 0, 3, 10, 0)
+      ];
+      const uniquifier = (d) => !d ? null : d.toISOString().slice(0, 10);
+      const expected = new Map([['2022-01-01', 3], ['2022-01-02', 3], ['2022-01-03', 2]]);
+      const results = AggregateUtils.countMap(source, null, uniquifier);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('count', () => {
+    it('finds the count values, with a property', () => {
+      const source = initializeWeather();
+      const expected = { Seattle: 3, 'New York': 3, Chicago: 3 };
+      const results = AggregateUtils.count(source, 'city');
+      expect(results).toEqual(expected);
+    });
+    it('finds the count values, with no argument sent', () => {
+      const source = [
+        'Chicago', 'Seattle', 'New York', 'Chicago', 'Seattle', 'New York',
+        'Chicago', 'Seattle', 'New York', 'Amsterdam'
+      ];
+      const expected = { Seattle: 3, 'New York': 3, Chicago: 3, Amsterdam: 1 };
+      const results = AggregateUtils.count(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds the count values, with null sent', () => {
+      const source = [
+        'Chicago', 'Seattle', 'New York', 'Chicago', 'Seattle', 'New York',
+        'Chicago', 'Seattle', 'New York', 'Amsterdam'
+      ];
+      const expected = { Seattle: 3, 'New York': 3, Chicago: 3, Amsterdam: 1 };
+      const results = AggregateUtils.count(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds the count values, with a function sent', () => {
+      const source = initializeWeather();
+      const expected = { Seattle: 3, 'New York': 3, Chicago: 3 };
+      const results = AggregateUtils.count(source, (r) => r.city);
+      expect(results).toEqual(expected);
+    });
+  });
+  describe('duplicate', () => {
+    it('finds the duplicate values, with a property', () => {
+      const source = [
+        { city: 'Chicago' }, { city: 'Seattle' }, { city: 'New York' },
+        { city: 'Chicago' }, { city: 'Seattle' }, { city: 'AmsterDam' }
+      ];
+      const expected = ['Chicago', 'Seattle'];
+      const results = AggregateUtils.duplicates(source, 'city');
+      expect(results).toEqual(expected);
+    });
+    it('finds the duplicate values, with no argument sent', () => {
+      const source = [
+        'Chicago', 'Seattle', 'New York', 'Chicago', 'Seattle', 'New York', 'Amsterdam'
+      ];
+      const expected = ['Chicago', 'Seattle', 'New York'];
+      const results = AggregateUtils.duplicates(source);
+      expect(results).toEqual(expected);
+    });
+    it('finds the duplicate values, with null sent', () => {
+      const source = [
+        'Chicago', 'Seattle', 'New York', 'Chicago', 'Seattle', 'New York', 'Amsterdam'
+      ];
+      const expected = ['Chicago', 'Seattle', 'New York'];
+      const results = AggregateUtils.duplicates(source, null);
+      expect(results).toEqual(expected);
+    });
+    it('finds the duplicate values, with a function sent', () => {
+      const source = [
+        { city: 'Chicago' }, { city: 'Seattle' }, { city: 'New York' },
+        { city: 'Chicago' }, { city: 'Seattle' }, { city: 'AmsterDam' }
+      ];
+      const expected = ['Chicago', 'Seattle'];
+      const results = AggregateUtils.duplicates(source, (r) => r.city);
+      expect(results).toEqual(expected);
+    });
+  });
+
+  describe('deferCollection', () => {
+    it('can defer a collection method to later', () => {
+      const data = [{ val: 12 }, { val: 4 }, { val: 1 }, { val: 3 }, { val: 5 },
+        { val: 2 }, { val: 15 }, { val: 3 }, { val: 6 }, { val: -1 }, { val: 23 }];
+      const minFn = AggregateUtils.deferCollection(AggregateUtils.min, 'val');
+      const result = minFn(data);
+      expect(result).toBe(-1);
+    });
+    it('throws an error if deferCollection isnt passed a function', () => {
+      //-- same line as above but `AggregateUtils` not `AggregateUtils.min`
+      expect(() =>
+        AggregateUtils.deferCollection(
+          AggregateUtils as unknown as (c: unknown[], a: string) => unknown,
+          "val"
+        )
+      ).toThrow();
+    });
+  });
+
+  describe('notIn', () => {
+    it('can determine if a collection of array values are within a set', () => {
+      const superSet = new Set([1, 2, 3, 4, 5]);
+      const data = [{ val: 12 }, { val: 4 }, { val: 1 }, { val: 3 }, { val: 5 },
+        { val: 2 }, { val: 15 }, { val: 3 }, { val: 6 }, { val: -1 }, { val: 23 }];
+      const results = AggregateUtils.notIn(data, 'val', superSet);
+      const expected = new Set([-1, 12, 15, 23, 6]);
+      expect(results).toEqual(expected);
+    });
+    //-- check on floats too
+    it('can determine if floats are in those values', () => {
+      const superSet = new Set([1.0, 1.5, 2.0]);
+      const data = [{ val: 1.0 }, { val: 1.5 }, { val: 2.0 }];
+      const results = AggregateUtils.notIn(data, 'val', superSet);
+      const expected = new Set();
+      expect(results).toEqual(expected);
+    });
+    it('can determine if strings are in those values', () => {
+      const superSet = new Set(['a', 'b', 'c']);
+      const data = [{ val: 'a' }, { val: 'b' }, { val: 'c' }, { val: 'd' }];
+      const results = AggregateUtils.notIn(data, 'val', superSet);
+      const expected = new Set(['d']);
+      expect(results).toEqual(expected);
+    });
+    it(', with a function sent', () => {
+      const superSet = new Set([1, 2, 3, 4, 5]);
+      const data = [{ val: 12 }, { val: 4 }, { val: 1 }, { val: 3 }, { val: 5 },
+        { val: 2 }, { val: 15 }, { val: 3 }, { val: 6 }, { val: -1 }, { val: 23 }];
+      const results = AggregateUtils.notIn(data, (r) => r.val, superSet);
+      const expected = new Set([-1, 12, 15, 23, 6]);
+      expect(results).toEqual(expected);
+    });
+  });
+  describe('unique', () => {
+    it('is unique, with a property', () => {
+      const data = [{ val: 'a' }, { val: 'b' }, { val: 'c' }, { val: 'd' }];
+      const results = AggregateUtils.isUnique(data, 'val');
+      const expected = true;
+      expect(results).toBe(expected);
+    });
+    it('can detect duplicate, with a number', () => {
+      const data = [{ val: 1 }, { val: 2 }, { val: 3 }, { val: 3 }];
+      const results = AggregateUtils.isUnique(data, 'val');
+      const expected = false;
+      expect(results).toBe(expected);
+    });
+    it('can detect duplicate, with a float', () => {
+      const data = [{ val: 1.0 }, { val: 1.5 }, { val: 2.0 }, { val: 2.0 }];
+      const results = AggregateUtils.isUnique(data, 'val');
+      const expected = false;
+      expect(results).toBe(expected);
+    });
+    it('can detect duplicates, with no argument sent', () => {
+      const data = ['a', 'b', 'c', 'd', 'a'];
+      const results = AggregateUtils.isUnique(data);
+      const expected = false;
+      expect(results).toBe(expected);
+    });
+    it('can detect duplicates, with null sent for a direct list', () => {
+      const data = ['a', 'b', 'c', 'd', 'a'];
+      const results = AggregateUtils.isUnique(data, null);
+      const expected = false;
+      expect(results).toBe(expected);
+    });
+    it('can still mark unique with null values', () => {
+      const data = ['a', 'b', null, 'c', null, 'd', null];
+      const results = AggregateUtils.isUnique(data, null);
+      const expected = false;
+      expect(results).toBe(expected);
+    });
+    it('can detect duplicates, with a function sent', () => {
+      const data = [{ val: 'a' }, { val: 'b' }, { val: 'c' }, { val: 'd' }, { val: 'a' }];
+      const results = AggregateUtils.isUnique(data, (r) => r.val);
+      const expected = false;
+      expect(results).toBe(expected);
+    });
+  });
+  /*
+    it(', with a property', () => {
+    })
+    it(', with no argument sent', () => {
+    });
+    it(', with null sent', () => {
+    });
+    it(', with a function sent', () => {
+    });
+ */
+});
+
+describe('property', () => {
+  it('accesses a property from a list', () => {
+    const data = [{ record: 'jobA', val: 1 }, { record: 'jobA', val: 2 },
+      { record: 'jobA', val: 3 }, { record: 'jobA', val: 4 },
+      { record: 'jobA', val: 5 }, { record: 'jobA', val: 6 },
+      { record: 'jobA', val: 7 }, { record: 'jobA', val: 8 },
+      { record: 'jobA', val: 9 }, { record: 'jobA', val: 10 }
+    ];
+    const expected = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const results = AggregateUtils.property(data, 'val');
+    expect(results).toEqual(expected);
+  });
+  it('accesses a function from a list', () => {
+    const data = [{ record: 'jobA', val: 1 }, { record: 'jobA', val: 2 },
+      { record: 'jobA', val: 3 }, { record: 'jobA', val: 4 },
+      { record: 'jobA', val: 5 }, { record: 'jobA', val: 6 },
+      { record: 'jobA', val: 7 }, { record: 'jobA', val: 8 },
+      { record: 'jobA', val: 9 }, { record: 'jobA', val: 10 }
+    ];
+    const expected = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const results = AggregateUtils.property(data, (r: { val: number }) => r.val);
+    expect(results).toEqual(expected);
+  });
+  it('accesses values from a list', () => {
+    const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const expected = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const results = AggregateUtils.property(data);
+    expect(results).toEqual(expected);
+  });
+    it('does not fail if not sent a list', () => {
+      const data = 1 as unknown as unknown[];
+      const expected = [];
+      const results = AggregateUtils.property(data, "val");
+      expect(results).toEqual(expected);
+    });
+  it('does not fail if sent a null list', () => {
+    const data = null;
+    const expected = [];
+    const results = AggregateUtils.property(data, 'val');
+    expect(results).toEqual(expected);
+  });
+  it('does not fail if sent an empty list', () => {
+    const data = [];
+    const expected = [];
+    const results = AggregateUtils.property(data, 'val');
+    expect(results).toEqual(expected);
+  });
+});
+
+describe('percentile', () => {
+  describe('gets the 50th percentile', () => {
+    it('from a property', () => {
+      const data = [{ record: 'jobA', val: 1 }, { record: 'jobA', val: 2 },
+        { record: 'jobA', val: 3 }, { record: 'jobA', val: 4 },
+        { record: 'jobA', val: 5 }, { record: 'jobA', val: 6 },
+        { record: 'jobA', val: 7 }, { record: 'jobA', val: 8 },
+        { record: 'jobA', val: 9 }, { record: 'jobA', val: 10 }
+      ];
+      const percentile = 50;
+      const expected = 5;
+      const result = AggregateUtils.percentile(data, 'val', percentile);
+      expect(result).toBe(expected);
+    });
+    it('from a function', () => {
+      const data = [{ record: 'jobA', val: 1 }, { record: 'jobA', val: 2 },
+        { record: 'jobA', val: 3 }, { record: 'jobA', val: 4 },
+        { record: 'jobA', val: 5 }, { record: 'jobA', val: 6 },
+        { record: 'jobA', val: 7 }, { record: 'jobA', val: 8 },
+        { record: 'jobA', val: 9 }, { record: 'jobA', val: 10 }
+      ];
+      const percentile = 50;
+      const expected = 5;
+      const result = AggregateUtils.percentile(data, (r: { val: number }) => r.val, percentile);
+      expect(result).toBe(expected);
+    });
+    it('from a decimal', () => {
+      const data = [{ record: 'jobA', val: 1 }, { record: 'jobA', val: 2 },
+        { record: 'jobA', val: 3 }, { record: 'jobA', val: 4 },
+        { record: 'jobA', val: 5 }, { record: 'jobA', val: 6 },
+        { record: 'jobA', val: 7 }, { record: 'jobA', val: 8 },
+        { record: 'jobA', val: 9 }, { record: 'jobA', val: 10 }
+      ];
+      const percentile = 0.5;
+      const expected = 5;
+      const result = AggregateUtils.percentile(data, (r: { val: number }) => r.val, percentile);
+      expect(result).toBe(expected);
+    });
+  });
+  describe('does not fail', () => {
+    it('if the property is not found', () => {
+      const data = [{ record: 'jobA', val: 1 }, { record: 'jobA', val: 2 },
+        { record: 'jobA', val: 3 }, { record: 'jobA', val: 4 },
+        { record: 'jobA', val: 5 }, { record: 'jobA', val: 6 },
+        { record: 'jobA', val: 7 }, { record: 'jobA', val: 8 },
+        { record: 'jobA', val: 9 }, { record: 'jobA', val: 10 }
+      ];
+      const percentile = 0.5;
+      const expected = undefined;
+      const result = AggregateUtils.percentile(data, 'invalidProp', percentile);
+      expect(result).toBe(expected);
+    });
+    it('if data is an empty array', () => {
+      const data = [];
+      const percentile = 0.5;
+      const expected = undefined;
+      const result = AggregateUtils.percentile(data, 'invalidProp', percentile);
+      expect(result).toBe(expected);
+    });
+    it("if data is not an array", () => {
+      const data = 2 as unknown as unknown[];
+      const pct = 0.5;
+      const expected = undefined;
+      const result = AggregateUtils.percentile(data, "invalidProp", pct);
+      expect(result).toBe(expected);
+    });
+    it("if data is null", () => {
+      const data = null as unknown as unknown[];
+      const pct = 0.5;
+      const expected = undefined;
+      const result = AggregateUtils.percentile(data, "invalidProp", pct);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('percentile_n', () => {
+    it('01th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 1;
+      const result = AggregateUtils.percentile_01(data);
+      expect(result).toBe(expected);
+    });
+    it('05th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 5;
+      const result = AggregateUtils.percentile_05(data);
+      expect(result).toBe(expected);
+    });
+    it('10th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 10;
+      const result = AggregateUtils.percentile_10(data);
+      expect(result).toBe(expected);
+    });
+    it('25th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 25;
+      const result = AggregateUtils.percentile_25(data);
+      expect(result).toBe(expected);
+    });
+    it('50th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 50;
+      const result = AggregateUtils.percentile_50(data);
+      expect(result).toBe(expected);
+    });
+    it('75th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 75;
+      const result = AggregateUtils.percentile_75(data);
+      expect(result).toBe(expected);
+    });
+    it('90th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 90;
+      const result = AggregateUtils.percentile_90(data);
+      expect(result).toBe(expected);
+    });
+    it('95th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 95;
+      const result = AggregateUtils.percentile_95(data);
+      expect(result).toBe(expected);
+    });
+    it('99th percentile', () => {
+      const data = Array.from(new Array(101)).map((_v, i) => i);
+      const expected = 99;
+      const result = AggregateUtils.percentile_99(data);
+      expect(result).toBe(expected);
+    });
+  });
+});
+
+describe('topValues', () => {
+  describe('gets top values', () => {
+    it('3 precipitation -> month', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 8, month: '2022-Mar', precip: 2.56 },
+        { id: 7, month: '2022-Apr', precip: 3.98 }
+      ];
+      const expected = ['2021-Oct', '2021-Dec', '2022-Apr'];
+      const results = AggregateUtils.topValues(collection, 3, 'month', '-precip');
+      expect(results).toEqual(expected);
+    });
+    it('5 precipitation -> month', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = ['2021-Oct', '2021-Dec', '2022-Mar', '2021-Nov', '2022-Feb'];
+      const results = AggregateUtils.topValues(collection, 5, 'month', '-precip');
+      expect(results).toEqual(expected);
+    });
+    it('5 precipitation', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [5.31, 4.13, 3.98, 3.94, 3.62];
+      const results = AggregateUtils.topValues(collection, 5, 'precip', '-precip');
+      expect(results).toEqual(expected);
+    });
+    it('3 most recent', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [2.56, 3.98, 3.62];
+      const results = AggregateUtils.topValues(collection, 3, 'precip', '-id');
+      expect(results).toEqual(expected);
+    });
+  });
+  describe('gets lowest values', () => {
+    it('3 lowest', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [0.87, 2.56, 2.68];
+      const results = AggregateUtils.topValues(collection, 3, 'precip', 'precip');
+      expect(results).toEqual(expected);
+    });
+  });
+  describe('can use literal values', () => {
+    it('top 5', () => {
+      const collection = [
+        2.68,
+        0.87,
+        5.31,
+        3.94,
+        4.13,
+        3.58,
+        3.62,
+        3.98,
+        2.56
+      ];
+      const expected = [5.31, 4.13, 3.98, 3.94, 3.62];
+      const results = AggregateUtils.topValues(collection, 5);
+      expect(results).toEqual(expected);
+    });
+    it('top 5 explicit', () => {
+      const collection = [
+        2.68,
+        0.87,
+        5.31,
+        3.94,
+        4.13,
+        3.58,
+        3.62,
+        3.98,
+        2.56
+      ];
+      const expected = [5.31, 4.13, 3.98, 3.94, 3.62];
+      const results = AggregateUtils.topValues(collection, 5, null, '-');
+      expect(results).toEqual(expected);
+    });
+    it('bottom 5', () => {
+      const collection = [
+        2.68,
+        0.87,
+        5.31,
+        3.94,
+        4.13,
+        3.58,
+        3.62,
+        3.98,
+        2.56
+      ];
+      const expected = [0.87, 2.56, 2.68, 3.58, 3.62];
+      const results = AggregateUtils.topValues(collection, 5, null, '');
+      expect(results).toEqual(expected);
+    });
+  });
+  describe('does not fail', () => {
+    it('if the collection is null', () => {
+      const collection = null;
+      const expected = [];
+      const results = AggregateUtils.topValues(collection, 3, 'precip', 'precip');
+      expect(results).toEqual(expected);
+    });
+    it('if the sort fields are empty on object collections', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 }
+      ];
+      const results = AggregateUtils.topValues(collection, 3);
+      expect(results).toEqual(expected);
+    });
+    it('if the return count is more records than we have', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+      const results = AggregateUtils.topValues(collection, 100, 'id', 'id');
+      expect(results).toEqual(expected);
+    });
+    it('if the return count is negative', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [0, 1, 2, 3, 4, 5, 6];
+      const results = AggregateUtils.topValues(collection, -2, 'id', 'id');
+      expect(results).toEqual(expected);
+    });
+    it('if the return count is 0', () => {
+      const collection = [
+        { id: 0, month: '2021-Sep', precip: 2.68 },
+        { id: 1, month: '2021-Aug', precip: 0.87 },
+        { id: 2, month: '2021-Oct', precip: 5.31 },
+        { id: 3, month: '2021-Nov', precip: 3.94 },
+        { id: 4, month: '2021-Dec', precip: 4.13 },
+        { id: 5, month: '2022-Jan', precip: 3.58 },
+        { id: 6, month: '2022-Feb', precip: 3.62 },
+        { id: 7, month: '2022-Mar', precip: 3.98 },
+        { id: 8, month: '2022-Apr', precip: 2.56 }
+      ];
+      const expected = [];
+      const results = AggregateUtils.topValues(collection, 0, 'id', 'id');
+      expect(results).toEqual(expected);
+    });
+    it('with the default number of values', () => {
+      const collection = [
+        2.68,
+        0.87,
+        5.31,
+        3.94,
+        4.13,
+        3.58,
+        3.62,
+        3.98,
+        2.56
+      ];
+      const expected = [5.31, 4.13, 3.98, 3.94, 3.62];
+      const results = AggregateUtils.topValues(collection);
+      expect(results).toEqual(expected);
+    });
+  });
+});

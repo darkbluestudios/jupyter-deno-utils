@@ -148,8 +148,19 @@ If your feature implementation is brand-new or fixing unsupposed bugs in the lib
 
 # Next items
 
-[] tableGenerator
+[X] tableGenerator
+[X] file
+[X] color.js
+[X] plantuml
+[X] date
+[X] group
+[X] hashMap
+[X] set
 [] ijs
 [] htmlScript
 [] vega
-[] plantuml
+[] describe
+[] random
+[] svg
+[] leaflet
+

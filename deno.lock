@@ -6,6 +6,7 @@
     "jsr:@std/assert@^1.0.15": "1.0.16",
     "jsr:@std/async@^1.0.15": "1.0.16",
     "jsr:@std/data-structures@^1.0.9": "1.0.9",
+    "jsr:@std/encoding@^1.0.10": "1.0.10",
     "jsr:@std/expect@^1.0.17": "1.0.17",
     "jsr:@std/fs@^1.0.19": "1.0.21",
     "jsr:@std/internal@^1.0.10": "1.0.12",
@@ -13,7 +14,11 @@
     "jsr:@std/path@^1.1.2": "1.1.4",
     "jsr:@std/path@^1.1.4": "1.1.4",
     "jsr:@std/testing@*": "1.0.16",
-    "jsr:@std/testing@^1.0.16": "1.0.16"
+    "jsr:@std/testing@^1.0.16": "1.0.16",
+    "npm:generate-schema@^2.6.0": "2.6.0",
+    "npm:percentile@*": "1.6.0",
+    "npm:percentile@^1.6.0": "1.6.0",
+    "npm:plantuml-encoder@^1.4.0": "1.4.0"
   },
   "jsr": {
     "@std/assert@1.0.16": {
@@ -27,6 +32,9 @@
     },
     "@std/data-structures@1.0.9": {
       "integrity": "033d6e17e64bf1f84a614e647c1b015fa2576ae3312305821e1a4cb20674bb4d"
+    },
+    "@std/encoding@1.0.10": {
+      "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
     },
     "@std/expect@1.0.17": {
       "integrity": "316b47dd65c33e3151344eb3267bf42efba17d1415425f07ed96185d67fc04d9",
@@ -62,11 +70,38 @@
       ]
     }
   },
+  "npm": {
+    "commander@2.20.3": {
+      "integrity": "sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ=="
+    },
+    "generate-schema@2.6.0": {
+      "integrity": "sha512-EUBKfJNzT8f91xUk5X5gKtnbdejZeE065UAJ3BCzE8VEbvwKI9Pm5jaWmqVeK1MYc1g5weAVFDTSJzN7ymtTqA==",
+      "dependencies": [
+        "commander",
+        "type-of-is"
+      ],
+      "bin": true
+    },
+    "percentile@1.6.0": {
+      "integrity": "sha512-8vSyjdzwxGDHHwH+cSGch3A9Uj2On3UpgOWxWXMKwUvoAbnujx6DaqmV1duWXNiH/oEWpyVd6nSQccix6DM3Ng=="
+    },
+    "plantuml-encoder@1.4.0": {
+      "integrity": "sha512-sxMwpDw/ySY1WB2CE3+IdMuEcWibJ72DDOsXLkSmEaSzwEUaYBT6DWgOfBiHGCux4q433X6+OEFWjlVqp7gL6g=="
+    },
+    "type-of-is@3.5.1": {
+      "integrity": "sha512-SOnx8xygcAh8lvDU2exnK2bomASfNjzB3Qz71s2tw9QnX8fkAo7aC+D0H7FV0HjRKj94CKV2Hi71kVkkO6nOxg=="
+    }
+  },
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "jsr:@std/encoding@^1.0.10",
       "jsr:@std/expect@^1.0.17",
-      "jsr:@std/testing@^1.0.16"
+      "jsr:@std/path@^1.1.4",
+      "jsr:@std/testing@^1.0.16",
+      "npm:generate-schema@^2.6.0",
+      "npm:percentile@^1.6.0",
+      "npm:plantuml-encoder@^1.4.0"
     ]
   }
 }
