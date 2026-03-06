@@ -1,4 +1,4 @@
-import { describe, it, afterEach, beforeEach } from "@std/testing/bdd";
+import { describe, it } from "@std/testing/bdd"; // afterEach, beforeEach
 import { expect } from "@std/expect";
 import ObjectUtils from "../src/object.ts";
 import { assertSpyCall, assertSpyCalls, spy } from "@std/testing/mock";
@@ -142,7 +142,7 @@ describe('ObjectUtils', () => {
         //expect(ObjectUtils.objAssignEntities(null, {})).toThrow();
         ObjectUtils.objAssignEntities(null, {});
         throw new Error('exception should be thrown if entities are not an array');
-      } catch (err) {
+      } catch (_err) {
         //
       }
     });
@@ -152,7 +152,7 @@ describe('ObjectUtils', () => {
         // expect(ObjectUtils.objAssignEntities(null, [])).toThrow();
         ObjectUtils.objAssignEntities(null, []);
         throw new Error('exception should be thrown if entities are not an array');
-      } catch (err) {
+      } catch (_err) {
         //
       }
     });
@@ -1972,11 +1972,13 @@ describe('ObjectUtils', () => {
       const joinFn = spy((s: unknown, t: unknown) => ({ ...(s as Record<string, unknown>), locationId: (t as { locationId?: number })?.locationId }));
 
       const results = ObjectUtils.join(targetObj, indexField, targetMap, joinFn);
+      /*
       const expected = [
         { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, locationId: 3 },
         { id: 3, city: 'New York', month: 'Apr', precip: 3.94, locationId: 2 },
         { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62, locationId: 1 }
       ];
+      */
 
       //-- null was added
       expect(targetObj.length).toBe(3);
@@ -2007,12 +2009,14 @@ describe('ObjectUtils', () => {
       const joinMock = spy(joinFn);
 
       const results = ObjectUtils.join(targetObj, indexField, targetMap, joinMock);
+      /*
       const expected = [
         { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, locationId: 3 },
         null,
         { id: 3, city: 'New York', month: 'Apr', precip: 3.94, locationId: 2 },
         { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62, locationId: 1 }
       ];
+      */
 
       //-- null was added
       expect(targetObj.length).toBe(4);

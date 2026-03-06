@@ -282,7 +282,7 @@ class DateDescription extends SeriesDescription {
 
     this.count += 1;
 
-    const oldMean = this.mean;
+    // const oldMean = this.mean;
     this.mean = this.mean == null ? cleanValue : this.mean + (cleanValue - this.mean) / this.count;
 
     super.checkMinMax(cleanValue);

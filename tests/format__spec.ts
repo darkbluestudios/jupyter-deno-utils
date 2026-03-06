@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
 import FormatUtils from "../src/format.ts";
-import { ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
+import { type ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
 import { assertSpyCalls } from "@std/testing/mock";
 
 describe('format', () => {

@@ -1,4 +1,4 @@
-import { Spy, spy } from "@std/testing/mock";
+import { type Spy, spy } from "@std/testing/mock";
 
 /**
  * Helper for classes that need to mock being within the iJavaScript context

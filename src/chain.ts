@@ -1,6 +1,6 @@
 
-import { MappableFn, FilterFn, ReducableFn } from './types/standard.ts';
-import { JupyterRichContent } from "./types/jupyter.ts";
+import type { MappableFn, FilterFn, ReducableFn } from './types/standard.ts';
+import type { JupyterRichContent } from "./types/jupyter.ts";
 
 /**
  * Describes a Function applied to the Monad

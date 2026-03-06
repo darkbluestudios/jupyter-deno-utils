@@ -388,7 +388,7 @@ ObjectUtils.keys = function keys(objOrArray = {}, maxRows = -1) {
 
   const result = new Set();
   if (maxRows < 1) {
-    objOrArray.every((item, index) => setAddAll(keysFromObject(item), result));
+    objOrArray.every((item, _index) => setAddAll(keysFromObject(item), result));
   } else {
     //-- check 
     objOrArray.every((item, index) => {
@@ -1972,7 +1972,7 @@ ObjectUtils.augmentInherit = function augmentInherit(source, augmentFn) {
   let keys;
 
   let lastValue = {};
-  return source.map((entry, index) => {
+  return source.map((entry, _index) => {
     const fnResult = augmentFn(entry, lastValue);
 
     //-- ignore all values that are undefined

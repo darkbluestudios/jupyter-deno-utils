@@ -247,7 +247,7 @@ FormatUtils.randomFloat = function randomFloat(max, min = 0) {
  * @see SourceMap.stringifyReducer for other instances.
  * @private
  */
-FormatUtils.mapReplacer = function replacer(key, value) {
+FormatUtils.mapReplacer = function replacer(_key, value) {
   if (value instanceof Map) {
     return {
       dataType: 'Map',
@@ -804,7 +804,7 @@ FormatUtils.compactNumber = function compactNumber(num, digits = 0) {
 FormatUtils.safeConvertString = function safeConvertString(val, otherwise = null) {
   try {
     return String(val);
-  } catch (err) {
+  } catch (_err) {
     return otherwise;
   }
 };
@@ -833,7 +833,7 @@ FormatUtils.safeConvertFloat = function safeConvertFloat(val, otherwise = NaN) {
       return otherwise;
     }
     return result;
-  } catch (err) {
+  } catch (_err) {
     //-- cannot reliably get the exception to be thrown so cannot test this line
     /* istanbul ignore next */
     return otherwise;
@@ -865,7 +865,7 @@ FormatUtils.safeConvertInteger = function safeConvertInteger(val, otherwise = Na
       return otherwise;
     }
     return result;
-  } catch (err) {
+  } catch (_err) {
     //-- cannot reliably get the exception to be thrown so cannot test this line
     /* istanbul ignore next */
     return otherwise;

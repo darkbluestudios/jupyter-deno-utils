@@ -1,10 +1,10 @@
 import { describe, it, beforeEach, afterEach } from "@std/testing/bdd";
 import { expect } from "@std/expect";
 import { assertSpyCalls, spy, type Spy } from "@std/testing/mock";
-import { ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
+// import { ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
 import { getContext } from "../src/plantuml.ts";
 import PlantUML from "../src/plantuml.ts";
-import { mock } from "node:test";
+// import { mock } from "node:test";
 
 const OLD_FETCH = globalThis.fetch;
 
@@ -126,7 +126,7 @@ describe("PlantUML", () => {
 
   describe("can render an image", () => {
     const CONTEXT = getContext();
-    const getSpy = function(fn:Function):Spy {
+    const getSpy = function(fn: (_s:string) => void ):Spy {
       return fn as Spy;
     }
 
@@ -142,7 +142,7 @@ describe("PlantUML", () => {
     afterEach(() => {
       const CONTEXT = getContext();
 
-      const restoreSpy = function restoreSpy(fn:Function):void {
+      const restoreSpy = function restoreSpy(fn: (_v:string) => unknown ):void {
         const spyFn:Spy = fn as Spy;
         spyFn.restore();
       };

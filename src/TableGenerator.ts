@@ -591,6 +591,6 @@ class TableGenerator {
 
 export default TableGenerator;
 
-export const newTable = function table(...rest):TableGenerator {
-  return new TableGenerator(...rest);
+export const newTable = function table(data?: Record<string, unknown>[] | Record<string, unknown[]> | null) :TableGenerator {
+  return new TableGenerator(data);
 }

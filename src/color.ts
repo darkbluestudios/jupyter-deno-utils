@@ -70,12 +70,16 @@ export const INTERPOLATION_STRATEGIES = {
 
 export let defaultFormat: FormatType = FORMATS.HEX;
 
-export const setDefaultFormat = (newFormat:FormatType) => {
+export const setDefaultFormat = (newFormat:FormatType): void => {
   defaultFormat = newFormat;
 }
 
 export let interpolationStrategy: InterpolationStrategyFn =
   INTERPOLATION_STRATEGIES.linear;
+
+export const setInterpolationStrategy = (i:InterpolationStrategyFn):void => {
+  interpolationStrategy = i;
+}
 
 export function parseHex3(
   hexStr: string,
@@ -121,6 +125,7 @@ export function parseRGB(
   const [r, g, b, a = optionalAlpha] = parts;
   return [r, g, b, a];
 }
+export const parseRGBA = parseRGB;
 
 export function parseColorArray(
   targetArray: unknown,

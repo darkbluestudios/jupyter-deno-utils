@@ -4,7 +4,7 @@
  * @module aggregate
  */
 
-import percentile from "npm:percentile@1.6.0";
+import percentile from "percentile";
 import ArrayUtils from "./array.ts";
 import ObjectUtils from "./object.ts";
 import FormatUtils from "./format.ts";
