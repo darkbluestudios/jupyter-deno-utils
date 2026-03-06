@@ -5,7 +5,7 @@
  */
 
 import percentileLib from "percentile";
-import ArrayUtils from "./array.ts";
+import * as ArrayUtils from "./array.ts";
 import ObjectUtils from "./object.ts";
 import FormatUtils from "./format.ts";
 

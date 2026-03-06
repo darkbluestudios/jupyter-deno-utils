@@ -1,7 +1,7 @@
 // import _importFresh from './importFresh.ts';
 import { importFresh2 } from './importFresh.ts';
 import * as _Aggregate from './aggregate.ts';
-import _ArrayUtils from './array.ts';
+import * as _ArrayUtils from './array.ts';
 import _Base64 from './base64.ts';
 import _chain from './chain.ts';
 import * as _Color from './color.ts';

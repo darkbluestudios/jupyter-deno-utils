@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import ArrayUtils from "../src/array.ts";
+import * as ArrayUtils from "../src/array.ts";
 
 type WeatherRow = { id: number; city: string; month: string; precip: number };
 const initializeWeather = (): WeatherRow[] => [
@@ -770,7 +770,7 @@ describe('ArrayUtils', () => {
     it('arrange is synonym of arrange', () => {
       const args = [2, 2, 4];
       const expected = [[[0, 1, 2, 3], [0, 1, 2, 3]], [[0, 1, 2, 3], [0, 1, 2, 3]]];
-      const results = ArrayUtils.arangeMulti.apply(this, args);
+      const results = ArrayUtils.arrangeMulti.apply(this, args);
       expect(results).toEqual(expected);
     });
   });

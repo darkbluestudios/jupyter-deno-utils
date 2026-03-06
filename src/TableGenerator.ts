@@ -4,7 +4,7 @@
 
 import FormatUtils from "./format.ts";
 import ObjectUtils from "./object.ts";
-import ArrayUtils, { createSort } from "./array.ts";
+import * as ArrayUtils from "./array.ts";
 import type { JupyterDisplayContext } from "./types/jupyter.ts";
 
 const printValue = FormatUtils.printValue;
@@ -299,7 +299,7 @@ class TableGenerator {
   }
 
   sort(...rest: string[]): this {
-    return this.sortFn(createSort(...rest));
+    return this.sortFn(ArrayUtils.createSort(...rest));
   }
 
   styleTable(value: string | null): this {

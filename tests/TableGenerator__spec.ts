@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, afterAll } from "@std/testing/bdd";
 import { expect } from "@std/expect";
 import { assertSpyCalls, spy, type Spy } from "@std/testing/mock";
-import ArrayUtils from "../src/array.ts";
+import * as ArrayUtils from "../src/array.ts";
 import TableGenerator from "../src/TableGenerator.ts";
 import { newTable as _newTable } from '../src/TableGenerator.ts';
 
