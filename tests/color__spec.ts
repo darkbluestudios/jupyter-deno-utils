@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import ColorUtils from "../src/color.ts";
+import * as ColorUtils from "../src/color.ts";
 
 interface ColorInfo {
   name: string;
@@ -277,7 +277,7 @@ describe("ColorUtil", () => {
         ).toStrictEqual({ r: 100, g: 90, b: 80, a: 0.5 });
       });
       it("can convert using default type array", () => {
-        ColorUtils.defaultFormat = ColorUtils.FORMATS.ARRAY;
+        ColorUtils.setDefaultFormat(ColorUtils.FORMATS.ARRAY);
         expect(ColorUtils.convert(OPAQUE_COLOR.hex)).toStrictEqual(
           OPAQUE_COLOR.arr
         );
@@ -321,7 +321,7 @@ describe("ColorUtil", () => {
         ).toStrictEqual(OPAQUE_COLOR.arr);
       });
       it("can convert with the default value", () => {
-        ColorUtils.defaultFormat = ColorUtils.FORMATS.HEXA;
+        ColorUtils.setDefaultFormat(ColorUtils.FORMATS.HEXA);
         expect(ColorUtils.convert(OPAQUE_COLOR.arr)).toStrictEqual(
           OPAQUE_COLOR.hexa
         );

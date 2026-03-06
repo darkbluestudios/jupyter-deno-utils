@@ -31,7 +31,7 @@ export type InterpolationStrategyFn = (
   pct: number
 ) => number;
 
-const COLOR_VALIDATION = {
+export const COLOR_VALIDATION = {
   isHex: (str: unknown): boolean =>
     Array.isArray(str)
       ? false
@@ -46,7 +46,7 @@ const COLOR_VALIDATION = {
     Object.hasOwn(obj as object, "b")
 };
 
-const FORMATS = {
+export const FORMATS = {
   HEX: "HEX" as const,
   HEXA: "HEXA" as const,
   RGB: "RGB" as const,
@@ -67,11 +67,17 @@ export const INTERPOLATION_STRATEGIES = {
     a + (b - a) * Math.sin(pct * PI2)
 };
 
-let defaultFormat: FormatType = FORMATS.HEX;
-let interpolationStrategy: InterpolationStrategyFn =
+
+export let defaultFormat: FormatType = FORMATS.HEX;
+
+export const setDefaultFormat = (newFormat:FormatType) => {
+  defaultFormat = newFormat;
+}
+
+export let interpolationStrategy: InterpolationStrategyFn =
   INTERPOLATION_STRATEGIES.linear;
 
-function parseHex3(
+export function parseHex3(
   hexStr: string,
   optionalAlpha: number = 1
 ): ColorArray | undefined {
@@ -86,7 +92,7 @@ function parseHex3(
   return [r, g, b, a / 255];
 }
 
-function parseHex(
+export function parseHex(
   hexStr: string,
   optionalAlpha: number = 1
 ): ColorArray | undefined {
@@ -101,7 +107,7 @@ function parseHex(
   return [r, g, b, a / 255];
 }
 
-function parseRGB(
+export function parseRGB(
   rgbStr: string,
   optionalAlpha: number = 1
 ): ColorArray | undefined {
@@ -116,7 +122,7 @@ function parseRGB(
   return [r, g, b, a];
 }
 
-function parseColorArray(
+export function parseColorArray(
   targetArray: unknown,
   optionalAlpha: number = 1
 ): ColorArray | undefined {
@@ -125,7 +131,7 @@ function parseColorArray(
   return [r, g, b, a];
 }
 
-function parseColorObject(
+export function parseColorObject(
   target: unknown,
   optionalAlpha: number = 1
 ): ColorArray | undefined {
@@ -134,7 +140,7 @@ function parseColorObject(
   return [r, g, b, a];
 }
 
-function parse(target: ColorInput, optionalAlpha: number = 1): ColorArray | undefined {
+export function parse(target: ColorInput, optionalAlpha: number = 1): ColorArray | undefined {
   return (
     parseColorArray(target, optionalAlpha) ||
     parseHex(target as string, optionalAlpha) ||
@@ -143,27 +149,27 @@ function parse(target: ColorInput, optionalAlpha: number = 1): ColorArray | unde
   );
 }
 
-function toHex(target: ColorInput): string {
+export function toHex(target: ColorInput): string {
   const arr = parse(target) ?? [0, 0, 0, 1];
   const [r, g, b] = arr;
   const hexOut = (num: number) => num.toString(16).padStart(2, "0");
   return `#${hexOut(r)}${hexOut(g)}${hexOut(b)}`;
 }
 
-function toHexA(target: ColorInput, optionalAlpha: number = 1): string {
+export function toHexA(target: ColorInput, optionalAlpha: number = 1): string {
   const arr = parse(target, optionalAlpha) ?? [0, 0, 0, optionalAlpha];
   const [r, g, b, a] = arr;
   const hexOut = (num: number) => num.toString(16).padStart(2, "0");
   return `#${hexOut(r)}${hexOut(g)}${hexOut(b)}${hexOut(Math.round(a * 255))}`;
 }
 
-function toRGB(target: ColorInput): string {
+export function toRGB(target: ColorInput): string {
   const arr = parse(target) ?? [0, 0, 0, 1];
   const [r, g, b] = arr;
   return `rgb( ${r}, ${g}, ${b})`;
 }
 
-function toRGBA(target: ColorInput, optionalAlpha: number = 1): string {
+export function toRGBA(target: ColorInput, optionalAlpha: number = 1): string {
   const arr = parse(target, optionalAlpha) ?? [0, 0, 0, optionalAlpha];
   const [r, g, b, a] = arr;
   const aStr =
@@ -175,11 +181,11 @@ function toRGBA(target: ColorInput, optionalAlpha: number = 1): string {
   return `rgba(${r}, ${g}, ${b}, ${aStr})`;
 }
 
-function toColorArray(target: ColorInput, optionalAlpha: number = 1): ColorArray {
+export function toColorArray(target: ColorInput, optionalAlpha: number = 1): ColorArray {
   return parse(target, optionalAlpha) ?? [0, 0, 0, optionalAlpha];
 }
 
-function toColorObject(
+export function toColorObject(
   target: ColorInput,
   optionalAlpha: number = 1
 ): ColorObject {
@@ -187,7 +193,7 @@ function toColorObject(
   return { r, g, b, a };
 }
 
-function convert(
+export function convert(
   target: ColorInput,
   formatType: FormatType = defaultFormat
 ): string | ColorArray | ColorObject {
@@ -200,7 +206,7 @@ function convert(
   return target as string | ColorArray | ColorObject;
 }
 
-function interpolate(
+export function interpolate(
   fromColor: ColorInput,
   toColor: ColorInput,
   percent: number = 0,
@@ -219,7 +225,7 @@ function interpolate(
   return convert(newColor, formatType);
 }
 
-function interpolator(
+export function interpolator(
   fromColor: ColorInput,
   toColor: ColorInput,
   interpolationFn: InterpolationStrategyFn = interpolationStrategy,
@@ -230,7 +236,7 @@ function interpolator(
   };
 }
 
-function generateSequence(
+export function generateSequence(
   fromColor: ColorInput,
   toColor: ColorInput,
   lengthOfSequence: number,
@@ -263,41 +269,3 @@ export const SEQUENCE = [
   "#9c755f",
   "#bab0ab"
 ];
-
-// @TODO
-const ColorUtils = {
-  COLOR_VALIDATION,
-  FORMATS,
-  INTERPOLATION_STRATEGIES,
-  get defaultFormat() {
-    return defaultFormat;
-  },
-  set defaultFormat(value: FormatType) {
-    defaultFormat = value;
-  },
-  get interpolationStrategy() {
-    return interpolationStrategy;
-  },
-  set interpolationStrategy(value: InterpolationStrategyFn) {
-    interpolationStrategy = value;
-  },
-  parse,
-  parseHex3,
-  parseHex,
-  parseRGB,
-  parseRGBA: parseRGB,
-  parseColorArray,
-  parseColorObject,
-  toHex,
-  toHexA,
-  toRGB,
-  toRGBA,
-  toColorArray,
-  toColorObject,
-  convert,
-  interpolate,
-  interpolator,
-  generateSequence
-};
-
-export default ColorUtils;

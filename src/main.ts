@@ -4,7 +4,7 @@ import _Aggregate from './aggregate.ts';
 import _ArrayUtils from './array.ts';
 import _Base64 from './base64.ts';
 import _chain from './chain.ts';
-import _Color from './color.ts';
+import * as _Color from './color.ts';
 import _Describe from './describe.ts';
 import _Date from './date.ts';
 import _File from './file.ts';
