@@ -2,9 +2,9 @@
 //-- review the api from observable
 //-- https://observablehq.com/@observablehq/input-table
 
-import FormatUtils from "./format.ts";
-import ObjectUtils from "./object.ts";
-import ArrayUtils, { createSort } from "./array.ts";
+import * as FormatUtils from "./format.ts";
+import * as ObjectUtils from "./object.ts";
+import * as ArrayUtils from "./array.ts";
 import type { JupyterDisplayContext } from "./types/jupyter.ts";
 
 const printValue = FormatUtils.printValue;
@@ -84,6 +84,16 @@ type StyleColumnMap = Record<string, (value: unknown, context: StyleColumnContex
  *
  * NOTE: `utils.table(...)` is the same as `new utils.TableGenerator(...)`
  *
+ * For example:
+ *
+ * ```
+ * utils.table(cars).limit(2).render();
+ * ```
+ *
+ * With many options: sort, limit, augment, columns, format, labels, styleColumn, styleRow, render
+ *
+ * Note that sticky headers are available when using {@link render}. By default, height is `50vh` - configurable via {@link height}.
+ *
  * # Types of calls:
  *
  * * constructor - new TableGenerator(object[])
@@ -108,7 +118,7 @@ class TableGenerator {
   #labels: Record<string, string> = {};
   #limit = 0;
   #offset = 0;
-  #printOptions: PrintOptions = null;
+  #printOptions: PrintOptions | null = null;
   #sortFn: ((a: unknown, b: unknown) => number) | null = null;
   #styleTable = "";
   #styleHeader = "";
@@ -117,6 +127,9 @@ class TableGenerator {
   #styleCell: StyleCellFn | null = null;
   #isTransposed = false;
 
+  /**
+   * @param data - collection of objects (or DataFrame-style object with 1d arrays per property)
+   */
   constructor(data?: Record<string, unknown>[] | Record<string, unknown[]> | null) {
     this.reset();
     if (data) {
@@ -124,6 +137,7 @@ class TableGenerator {
     }
   }
 
+  /** Resets the generator to initial state */
   reset(): this {
     this.#data = [];
     this.#augmentFn = null;
@@ -148,16 +162,34 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Assigns the data to be used in generating the table.
+   * @param col - collection of objects
+   * @returns chainable instance
+   */
   data(col?: Record<string, unknown>[] | Record<string, unknown[]> | null): this {
     this.#data = Array.isArray(col) ? col : [];
     return this;
   }
 
+  /**
+   * Assigns the data by importing a collection of objects.
+   * Syntactic sugar - data is expected as a collection of objects.
+   * @param data - collection of objects
+   * @returns chainable instance
+   */
   fromObjectCollection(data: Record<string, unknown>[]): this {
     this.data(data);
     return this;
   }
 
+  /**
+   * Assigns the data by importing a 2 dimensional array.
+   * If headers are not provided, the first row is assumed to be headers.
+   * @param arrayCollection - 2d array
+   * @param headers - optional header row (if provided, first row of data is not used as headers)
+   * @returns chainable instance
+   */
   fromArray(arrayCollection?: unknown[][] | null, headers?: string[] | null): this {
     if (!arrayCollection) {
       this.data(null);
@@ -167,6 +199,12 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Assigns the data from a single 1 dimensional array.
+   * Syntactic sugar - wraps the 1d array into a 2d array with '_' as the column.
+   * @param array1d - 1d array of values
+   * @returns chainable instance
+   */
   fromList(array1d?: unknown[] | null): this {
     if (!array1d) {
       this.data(null);
@@ -176,15 +214,29 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Initializes the data with an object holding 1d tensor properties (Danfo.js compatible).
+   * Each property is an array of values for that column.
+   * @param dataFrameObject - object with property: array of values
+   * @returns chainable instance
+   */
   fromDataFrameObject(dataFrameObject?: Record<string, unknown[]> | null): this {
     if (!dataFrameObject) {
       this.data(null);
       return this;
     }
-    this.data(ObjectUtils.objectCollectionFromDataFrameObject(dataFrameObject as Record<string, unknown>) as Record<string, unknown>[]);
+    this.data(ObjectUtils.objectCollectionFromDataFrameObject(
+      dataFrameObject as Record<string, unknown[]>
+    ) as Record<string, unknown>[]);
     return this;
   }
 
+  /**
+   * Augments data with additional fields (non-destructively).
+   * Each property in obj is a function (row) => value that adds a new column.
+   * @param obj - object with newProperty: (record) => value
+   * @returns chainable instance
+   */
   augment(obj: Record<string, (record: Record<string, unknown>) => unknown> | null): this {
     if (!obj) {
       this.#augmentFn = null;
@@ -206,6 +258,12 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Convenience function to set a border on the Data Cells.
+   * Only applies when rendering HTML or generating HTML.
+   * @param borderCSS - CSS string (e.g. '1px solid #aaa') or true for default
+   * @returns chainable instance
+   */
   border(borderCSS: string | boolean | null): this {
     let cleanCSS = "";
     if (borderCSS === true) {
@@ -217,6 +275,13 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Applies an optional set of columns / properties to render.
+   * If not provided, all fields are rendered. If provided, only listed fields.
+   * @param values - array of field names (or first field + rest)
+   * @param rest - additional field names
+   * @returns chainable instance
+   */
   columns(values: string | string[], ...rest: string[]): this {
     if (typeof values === "string") {
       this.#columns = [values, ...rest];
@@ -228,6 +293,12 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Applies an optional set of columns / properties not to render.
+   * @param values - array of field names to exclude
+   * @param rest - additional field names
+   * @returns chainable instance
+   */
   columnsToExclude(values: string | string[], ...rest: string[]): this {
     if (typeof values === "string") {
       this.#columnsToExclude = [values, ...rest];
@@ -239,11 +310,23 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Filter the dataset. Function returns true to include the row.
+   * @param filterFn - (row) => boolean
+   * @returns chainable instance
+   */
   filter(filterFn: FilterFn): this {
     this.#filterFn = filterFn;
     return this;
   }
 
+  /**
+   * Object with translation functions for matching properties.
+   * Only matching properties are changed - all others left alone.
+   * Supports (value) => result, or 'string'|'number'|'boolean' for type conversion.
+   * @param obj - property: (value) => result or 'String'|'Number'|'Boolean'
+   * @returns chainable instance
+   */
   format(obj: Record<string, unknown> | null): this {
     if (!obj) {
       this.#formatterFn = null;
@@ -259,64 +342,126 @@ class TableGenerator {
     return this;
   }
 
+  /** Legacy version of format - delegates to format */
   formatter(obj: Record<string, unknown> | null): this {
     return this.format(obj);
   }
 
+  /**
+   * Function that can format a value for a given row, cell.
+   * (value, columnIndex, property, rowIndex, record) => newValue
+   * @param fn - formatter receiving FormatterContext
+   * @returns chainable instance
+   */
   formatterFn(fn: FormatterFn): this {
     this.#formatterFn = fn;
     return this;
   }
 
+  /**
+   * Set the css max-height of the table when calling render. Defaults to '50vh'.
+   * @param maxHeightCSS - css for max-height
+   * @returns chainable instance
+   */
   height(maxHeightCSS: string): this {
     this.#height = maxHeightCSS;
     return this;
   }
 
+  /**
+   * The number of rows to limit. 10 = ascending 10 records. -10 = descending 10 records.
+   * @param limitRecords - 0 for all, + for ascending, - for descending
+   * @returns chainable instance
+   */
   limit(limitRecords: number): this {
     this.#limit = limitRecords;
     return this;
   }
 
+  /**
+   * The number of rows to skip before showing results. 10 = skip first 10. -10 = only show last 10.
+   * @param offsetRecords - rows to skip
+   * @returns chainable instance
+   */
   offset(offsetRecords: number): this {
     this.#offset = offsetRecords;
     return this;
   }
 
+  /**
+   * Sets alternative labels for column headers.
+   * @param labelsObj - property: displayLabel
+   * @returns chainable instance
+   */
   labels(labelsObj: Record<string, string>): this {
     this.#labels = labelsObj;
     return this;
   }
 
+  /**
+   * Options for printValue when rendering (collapseObjects, dateFormat, etc.)
+   * @param options - PrintOptions for value rendering
+   * @returns chainable instance
+   */
   printOptions(options: PrintOptions): this {
     this.#printOptions = options;
     return this;
   }
 
+  /**
+   * Applies a standard array sort function to the data.
+   * @param fn - sort function (a, b) => number
+   * @returns chainable instance
+   */
   sortFn(fn: (a: unknown, b: unknown) => number): this {
     this.#sortFn = fn;
     return this;
   }
 
+  /**
+   * Convenience: creates a sort based on properties. Prefix with '-' for descending.
+   * @param rest - field names (e.g. 'Year', '-Displacement', 'Name')
+   * @returns chainable instance
+   */
   sort(...rest: string[]): this {
-    return this.sortFn(createSort(...rest));
+    return this.sortFn(ArrayUtils.createSort(...rest));
   }
 
+  /**
+   * Defines the style to render on the table. Only used for render/generateHTML.
+   * @param value - css string (e.g. 'border:1px solid #000')
+   * @returns chainable instance
+   */
   styleTable(value: string | null): this {
     this.#styleTable = value ?? "";
     return this;
   }
 
+  /**
+   * Override the styles for the header row. Only used for render/generateHTML.
+   * @param value - css string (e.g. 'font-weight: bold')
+   * @returns chainable instance
+   */
   styleHeader(value: string | null): this {
     this.#styleHeader = value ?? "";
     return this;
   }
 
+  /**
+   * Function to apply style to a row. (rowIndex, row, record) => css string
+   * @param styleFn - (ctx) => css string
+   * @returns chainable instance
+   */
   styleRow(styleFn: StyleRowFn | null): this {
     this.#styleRow = styleFn;
     return this;
   }
 
+  /**
+   * Function to apply style per column. Object with property: (value, context) => css string
+   * @param styleObj - columnHeader: (value, context) => css string
+   * @returns chainable instance
+   */
   styleColumn(styleObj: StyleColumnMap | null): this {
     if (!styleObj) {
       this.#styleColumn = null;
@@ -329,16 +474,26 @@ class TableGenerator {
     return this;
   }
 
+  /**
+   * Function to apply style per cell. (value, columnIndex, rowIndex, row, record) => css string
+   * @param styleFn - (ctx) => css string
+   * @returns chainable instance
+   */
   styleCell(styleFn: StyleCellFn | null): this {
     this.#styleCell = styleFn;
     return this;
   }
 
+  /**
+   * Transposes (flips along the diagonal) prior to output. Handy for wide, short tables.
+   * @returns chainable instance
+   */
   transpose(): this {
     this.#isTransposed = true;
     return this;
   }
 
+  /** Prepares the data prior to any rendering (sort, augment, filter, columns, limit, offset, transpose) */
   prepare(): TableData {
     let cleanCollection: Record<string, unknown>[] = this.#data || [];
     if (this.#sortFn) {
@@ -390,6 +545,11 @@ class TableGenerator {
     return { headers, data };
   }
 
+  /**
+   * Generates an HTML table string
+   * @returns HTML string
+   * @see render
+   */
   generateHTML(): string {
     const results = this.prepare();
     const styleTable = this.#styleTable;
@@ -473,6 +633,12 @@ class TableGenerator {
     );
   }
 
+  /**
+   * Generates a markdown table
+   * @param options - align: true to pad columns
+   * @returns markdown string
+   * @see renderMarkdown
+   */
   generateMarkdown(options?: { align?: boolean }): string {
     const { align = true } = options ?? {};
     const printOptions = this.#printOptions;
@@ -480,8 +646,8 @@ class TableGenerator {
     data.unshift(headers.map(() => "--"));
     data.unshift(headers as unknown[]);
     const maxWidths = new Array((data[0] as unknown[]).length).fill(0);
-    data = data.map((row, _rowIndex) =>
-      (row as unknown[]).map((value, columnIndex) => {
+    data = data.map((row, _rowIndex) => (row as unknown[])
+      .map((value, columnIndex) => {
         const cleanedValue = printValue(value, printOptions);
         if (align) {
           const valueLen = String(cleanedValue).length;
@@ -490,8 +656,8 @@ class TableGenerator {
           }
         }
         return cleanedValue;
-      }) as unknown[][]
-    ) as unknown[][];
+      }) as string[]
+    ) as string[][];
     if (align) {
       data = data.map((row) =>
         (row as string[]).map((value, columnIndex) =>
@@ -502,6 +668,11 @@ class TableGenerator {
     return (data as string[][]).map((row) => row.join("|")).join("\n");
   }
 
+  /**
+   * Generates a CSV table
+   * @returns CSV string
+   * @see renderCSV
+   */
   generateCSV(): string {
     const results = this.prepare();
     const printOptions = this.#printOptions;
@@ -516,6 +687,11 @@ class TableGenerator {
     return printHeader(results.headers) + printBody(results.data);
   }
 
+  /**
+   * Generates a TSV table
+   * @returns TSV string
+   * @see renderTSV
+   */
   generateTSV(): string {
     const results = this.prepare();
     const printOptions = this.#printOptions;
@@ -525,19 +701,40 @@ class TableGenerator {
     return tsvify(results.headers) + "\n" + results.data.map((dataRow) => tsvify(dataRow)).join("\n");
   }
 
+  /**
+   * Generates a result set with headers and data arrays for further processing
+   * @returns { headers, data }
+   * @see generateArray2
+   */
   generateArray(_returnUnifiedArray = false): TableData {
     return this.prepare();
   }
 
+  /**
+   * Generates a 2d array with headers as first row, then data rows.
+   * Helpful for transpose or further processing.
+   * @returns [headers, ...dataRows]
+   * @see generateArray
+   */
   generateArray2(): unknown[][] {
     const results = this.prepare();
     return [results.headers, ...results.data];
   }
 
+  /**
+   * Generates a collection of objects from the result set.
+   * @returns array of objects
+   * @see generateArray2
+   */
   generateObjectCollection(): Record<string, unknown>[] {
     return ObjectUtils.objectCollectionFromArray(this.generateArray2()) as Record<string, unknown>[];
   }
 
+  /**
+   * Generates a Danfo.js compatible DataFrame object (each property = 1d array of column values).
+   * @returns object with property: array of values
+   * @see generateObjectCollection
+   */
   generateDataFrameObject(): Record<string, unknown[]> {
     const prepResults = this.prepare();
     const results: Record<string, unknown[]> = {};
@@ -553,6 +750,10 @@ class TableGenerator {
 
   static hasRenderedCSS = false;
 
+  /**
+   * Renders the HTML table in the cell results (Jupyter). Uses sticky headers.
+   * @see generateHTML
+   */
   render(): void {
     const g = globalThis as unknown as {
       context?: JupyterDisplayContext;
@@ -576,14 +777,26 @@ class TableGenerator {
     );
   }
 
+  /**
+   * Renders markdown in the cell results (console.log)
+   * @see generateMarkdown
+   */
   renderMarkdown(): void {
     CONTEXT.console(this.generateMarkdown());
   }
 
+  /**
+   * Renders CSV in the cell results (console.log)
+   * @see generateCSV
+   */
   renderCSV(): void {
     CONTEXT.console(this.generateCSV());
   }
 
+  /**
+   * Renders TSV in the cell results (console.log)
+   * @see generateTSV
+   */
   renderTSV(): void {
     CONTEXT.console(this.generateTSV());
   }
@@ -591,6 +804,7 @@ class TableGenerator {
 
 export default TableGenerator;
 
-export const newTable = function table(...rest) {
-  return new TableGenerator(...rest);
+/** Shorthand: utils.table(data) is same as new TableGenerator(data) */
+export const newTable = function table(data?: Record<string, unknown>[] | Record<string, unknown[]> | null): TableGenerator {
+  return new TableGenerator(data);
 }

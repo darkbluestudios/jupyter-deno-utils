@@ -163,4 +163,3 @@ If your feature implementation is brand-new or fixing unsupposed bugs in the lib
 [] random
 [] svg
 [] leaflet
-

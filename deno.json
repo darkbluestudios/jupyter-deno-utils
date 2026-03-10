@@ -1,6 +1,6 @@
 {
   "name": "@darkbluestudios/jupyter-deno-utils",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "exports": "./src/main.ts",
   "license": "MIT",
   "compilerOptions": { "noImplicitAny": false },
@@ -49,7 +49,7 @@
     "@std/expect": "jsr:@std/expect@^1.0.17",
     "@std/testing": "jsr:@std/testing@^1.0.16",
     "generate-schema": "npm:generate-schema@^2.6.0",
-    "percentile": "npm:percentile@^1.6.0",
+    "percentile": "npm:percentile@1.6.0",
     "plantuml-encoder": "npm:plantuml-encoder@^1.4.0"
   },
   "test": {

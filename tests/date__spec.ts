@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import DateUtils from "../src/date.ts";
+import * as DateUtils from "../src/date.ts";
 
 describe("Date", () => {
   describe("isValid", () => {

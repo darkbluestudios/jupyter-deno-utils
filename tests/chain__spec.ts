@@ -15,7 +15,7 @@ import {
 
 import chain from "../src/chain.ts";
 
-import { ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
+import { type ConsoleI, mockConsole, removeConsoleMock } from "./__testHelper/JupyterContext.ts";
 
 describe('testing/spy works the way I think it does', () => {
   it('can spy a function', () => {
@@ -137,9 +137,6 @@ describe('chain', () => {
   });
 
   describe('to array', () => {
-    it('can convert an array', () => {
-
-    });
     it('can convert a set', () => {
       const expected = ['a', 'b', 'c'];
       const value = new Set(expected);

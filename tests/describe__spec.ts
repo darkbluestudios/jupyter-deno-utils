@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import DescribeUtil from "../src/describe.ts";
+import * as DescribeUtil from "../src/describe.ts";
 
 describe("DescribeUtil", () => {
   describe("StringDescription", () => {

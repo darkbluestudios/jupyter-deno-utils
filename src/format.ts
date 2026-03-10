@@ -49,13 +49,11 @@
  * @module format
  * @exports format
  */
-const FormatUtils: { [key: string]: any } = {}; // eslint-disable-line @typescript-eslint/no-explicit-any
-
 /**
  * The number of milliseconds of various time durations
  * @private
  */
-FormatUtils.DURATION = {
+export const DURATION = {
   MILLISECOND: 1,
   SECOND: 1000,
   MINUTE: 1000 * 60,
@@ -98,7 +96,7 @@ FormatUtils.DURATION = {
  * utils.format.printValue( new Date(), format)
  * //Tue Mar 08 2022 16:22:38 GMT-0600 (Central Standard Time)
  */
-FormatUtils.DATE_FORMAT = {
+export const DATE_FORMAT = {
   LOCAL: 'toLocaleString',
   LOCAL_DATE: 'toLocaleDateString',
   LOCAL_TIME: 'toLocaleTimeString',
@@ -116,7 +114,18 @@ FormatUtils.DATE_FORMAT = {
  * utils.format.ellipsis('supercalifragilisticexpialidocious', 5)
  * // super…
  */
-FormatUtils.ELLIPSIS = '…';
+export const ELLIPSIS = '…';
+
+/** Replaces maps with strings. Used internally by printValue and limitLines. */
+function mapReplacer(_key: string, value: unknown): unknown {
+  if (value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries()),
+    };
+  }
+  return value;
+}
 
 /**
  * Print a value in legible string format
@@ -156,9 +165,12 @@ FormatUtils.ELLIPSIS = '…';
  * @returns {string} - legible formatted value
  * @see #.DATE_FORMAT
  */
-FormatUtils.printValue = function printValue(value, options) {
+export function printValue(
+  value: unknown,
+  options?: { dateFormat?: string | null; collapseObjects?: boolean; collapse?: boolean } | null
+): string {
   const {
-    dateFormat = FormatUtils.DATE_FORMAT.ISO,
+    dateFormat = DATE_FORMAT.ISO,
     collapseObjects = false,
     collapse = false
   } = options || {};
@@ -172,27 +184,26 @@ FormatUtils.printValue = function printValue(value, options) {
   const valType = typeof value;
   
   if (valType === 'string') {
-    return value;
+    return value as string;
   } else if (valType === 'number') {
-    return value.toLocaleString();
+    return (value as number).toLocaleString();
   } else if (value instanceof Date) {
-    if (dateFormat === FormatUtils.DATE_FORMAT.NONE) {
+    if (dateFormat === DATE_FORMAT.NONE) {
       return String(value);
     }
-    return value[dateFormat || FormatUtils.DATE_FORMAT.ISO]();
+    return (value as Date & { [key: string]: () => string })[dateFormat || DATE_FORMAT.ISO]();
   } else if (value instanceof Map) {
     if (collapseObjects || collapse) {
       return `[Map length=${value.size} ]`;
     }
-    return JSON.stringify(value, FormatUtils.mapReplacer);
-  } else if (typeof value[Symbol.iterator] === 'function') {
-    //-- iterator
-    return JSON.stringify(Array.from(value));
+    return JSON.stringify(value, mapReplacer as (key: string, value: unknown) => unknown);
+  } else if (typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
+    return JSON.stringify(Array.from(value as Iterable<unknown>));
   } else if (valType === 'object' && (collapseObjects || collapse)) {
     return String(value);
   }
   return JSON.stringify(value);
-};
+}
 
 /**
  * Print a number and zero fill it until it is len long.
@@ -208,9 +219,9 @@ FormatUtils.printValue = function printValue(value, options) {
  * utils.format.zeroFill(23, 5)      // '00023';
  * utils.format.zeroFill(23, 5, ' ') // '   23'
  */
-FormatUtils.zeroFill = function zeroFill(num, len = 3, fill = '0') {
+export function zeroFill(num: number, len = 3, fill = '0'): string {
   return String(num).padStart(len, fill);
-};
+}
 
 /**
  * Generate a random Integer between a maximum and a minimum number
@@ -223,9 +234,9 @@ FormatUtils.zeroFill = function zeroFill(num, len = 3, fill = '0') {
  * utils.format.randomInt(10) // 4
  * utils.format.randomInt(20, 10) // 11
  */
-FormatUtils.randomInt = function randomInt(max, min = 0) {
+export function randomInt(max: number, min = 0): number {
   return Math.trunc(Math.random() * (max - min) + min);
-};
+}
 
 /**
  * Generate a random Float between a maximum and minimum number
@@ -237,25 +248,9 @@ FormatUtils.randomInt = function randomInt(max, min = 0) {
  * utils.format.randomFloat(10) // 7.21323
  * utils.format.randomFloat(10) // 4.2232392
  */
-FormatUtils.randomFloat = function randomFloat(max, min = 0) {
-  return (Math.random() *  (max - min) + min);
-};
-
-/**
- * Replaces maps with strings.
- * 
- * @see SourceMap.stringifyReducer for other instances.
- * @private
- */
-FormatUtils.mapReplacer = function replacer(key, value) {
-  if (value instanceof Map) {
-    return {
-      dataType: 'Map',
-      value: Array.from(value.entries()), // or with spread: value: [...value]
-    };
-  }
-  return value;
-};
+export function randomFloat(max: number, min = 0): number {
+  return (Math.random() * (max - min) + min);
+}
 
 /**
  * Divide a number and get the integer value and remainder
@@ -266,12 +261,12 @@ FormatUtils.mapReplacer = function replacer(key, value) {
  * utils.format.divideR(5, 3)
  * // ({ value: 1, remainder: 2 })
  */
-FormatUtils.divideR = function divideR(numerator, denominator) {
-  return ({
+export function divideR(numerator: number, denominator: number): { value: number; remainder: number } {
+  return {
     value: Math.trunc(numerator / denominator),
     remainder: numerator % denominator
-  });
-};
+  };
+}
 
 /**
  * @typedef {Object} Duration
@@ -303,21 +298,21 @@ FormatUtils.divideR = function divideR(numerator, denominator) {
  * //   epoch: 288000
  * // }
  */
-FormatUtils.millisecondDuration = function millisecondDuration(milliseconds: number) {
+export function millisecondDuration(milliseconds: number): Record<string, number> {
   const result: Record<string, number> = {};
-  let division = FormatUtils.divideR(milliseconds, FormatUtils.DURATION.DAY);
+  let division = divideR(milliseconds, DURATION.DAY);
   result.days = division.value;
-  division = FormatUtils.divideR(division.remainder, FormatUtils.DURATION.HOUR);
+  division = divideR(division.remainder, DURATION.HOUR);
   result.hours = division.value;
-  division = FormatUtils.divideR(division.remainder, FormatUtils.DURATION.MINUTE);
+  division = divideR(division.remainder, DURATION.MINUTE);
   result.minutes = division.value;
-  division = FormatUtils.divideR(division.remainder, FormatUtils.DURATION.SECOND);
+  division = divideR(division.remainder, DURATION.SECOND);
   result.seconds = division.value;
   result.milliseconds = division.remainder;
   result.epoch = milliseconds;
 
   return result;
-};
+}
 
 /**
  * Ellipsifies a string (but only if it is longer than maxLen)
@@ -330,14 +325,14 @@ FormatUtils.millisecondDuration = function millisecondDuration(milliseconds: num
  * utils.format.ellipsify('longName', 8) // 'longName' (as maxLen is 8)
  * utils.format.ellipsify('longName', 4) // 'long…' (as str is longer than maxLen)
  */
-FormatUtils.ellipsify = function ellipsify(str, maxLen) {
+export function ellipsify(str: unknown, maxLen?: number | null): string {
   const cleanStr = !str
     ? ''
     : typeof str === 'string'
       ? str
       : JSON.stringify(str);
   
-  const cleanLen = maxLen > 0 ? maxLen : 50;
+  const cleanLen = (maxLen ?? 0) > 0 ? (maxLen ?? 50) : 50;
 
   if (cleanStr.length > cleanLen) {
     return `${cleanStr.substring(0, cleanLen)}…`;
@@ -375,7 +370,9 @@ FormatUtils.ellipsify = function ellipsify(str, maxLen) {
  * utils.format.mapDomain(0.5, [0, 1], [0, Math.PI + Math.PI])
  * // 3.1415 or Math.PI - since it is half of 2 PI
  */
-FormatUtils.mapDomain = function mapDomain(val, [domainMin, domainMax], [rangeMin = 0, rangeMax = 1]) {
+export function mapDomain(val: number, domain: [number, number] | number[], range: [number, number] | number[] = [0, 1]): number {
+  const [domainMin, domainMax] = domain;
+  const [rangeMin = 0, rangeMax = 1] = range;
   if (val < domainMin) {
     return rangeMin;
   } else if (val > domainMax) {
@@ -472,7 +469,7 @@ FormatUtils.mapDomain = function mapDomain(val, [domainMin, domainMax], [rangeMi
  * utils.format.mapArrayDomain(0.5, randomArray); // assumed [0, 1]
  * // 'c'
  */
-FormatUtils.mapArrayDomain = function mapArrayDomain(val, targetArray, domain = null) {
+export function mapArrayDomain<T>(val: number, targetArray: T[] | null | undefined, domain?: [number, number] | number[] | null): T {
   if (!targetArray || !Array.isArray(targetArray)) {
     throw Error('mapArrayDomain: targetArray is not an array');
   } else if (targetArray.length < 1) {
@@ -488,14 +485,9 @@ FormatUtils.mapArrayDomain = function mapArrayDomain(val, targetArray, domain = 
     return targetArray[targetArray.length - 1];
   }
 
-  const targetIndex = Math.floor(FormatUtils.mapDomain(
-    val,
-    [domainMin, domainMax],
-    [0, targetArray.length]
-  ));
-  // console.log(targetIndex);
+  const targetIndex = Math.floor(mapDomain(val, [domainMin, domainMax], [0, targetArray.length]));
   return targetArray[targetIndex];
-};
+}
 
 /**
  * Given that a period of time is millisecondPeriod number of milliseconds long,
@@ -541,7 +533,7 @@ FormatUtils.mapArrayDomain = function mapArrayDomain(val, targetArray, domain = 
  * utils.format.timePeriod(5000, nextTime, startTime);
  * // 3.6 - 5000 millisecond cycles elapsed
  */
-FormatUtils.timePeriod = function mapTime(millisecondPeriod, timeMilli = null, startMilli = null) {
+export function timePeriod(millisecondPeriod: number, timeMilli?: number | null, startMilli?: number | null): number {
   let updatedMilli = !timeMilli
     ? new Date().getTime()
     : timeMilli;
@@ -551,7 +543,7 @@ FormatUtils.timePeriod = function mapTime(millisecondPeriod, timeMilli = null, s
   }
 
   return updatedMilli / millisecondPeriod;
-};
+}
 
 /**
  * Given that a period of time is millisecondPeriod number of milliseconds long,
@@ -579,9 +571,9 @@ FormatUtils.timePeriod = function mapTime(millisecondPeriod, timeMilli = null, s
  * 
  * utils.format.timePeriodPercent(10000, nextTime) // 0.2
  */
-FormatUtils.timePeriodPercent = function mapEpochInPeriod(millisecondPeriod, timeEpoch = new Date().getTime()) {
+export function timePeriodPercent(millisecondPeriod: number, timeEpoch:number = new Date().getTime()): number {
   return (timeEpoch % millisecondPeriod) / millisecondPeriod;
-};
+}
 
 /**
  * Clamps (restircts) a value to a specific domain.
@@ -603,7 +595,8 @@ FormatUtils.timePeriodPercent = function mapEpochInPeriod(millisecondPeriod, tim
  * format.clampDomain( 2, [0, 1]); // 1
  * format.clampDomain( 0.5, [0, 1]); // 0.5
  **/
-FormatUtils.clampDomain = function clampDomain(value, [minimum, maximum]) {
+export function clampDomain(value: number, domain: [number, number]): number {
+  const [minimum, maximum] = domain;
   if (value < minimum) {
     return minimum;
   } else if (value > maximum) {
@@ -622,7 +615,7 @@ FormatUtils.clampDomain = function clampDomain(value, [minimum, maximum]) {
  * utils.format.capitalize('john'); // 'John'
  * utils.format.capitalize('john doe'); // 'John doe'
  */
-FormatUtils.capitalize = function capitalize(str) {
+export function capitalize(str: string | null | undefined): string {
   if (!str || str.length === 0) {
     return '';
   }
@@ -643,14 +636,22 @@ FormatUtils.capitalize = function capitalize(str) {
  * utils.format.capitalizeAll('john doe'); // 'John Doe'
  * utils.format.capitalizeAll('john-paul'); // 'John-Paul'
  */
-FormatUtils.capitalizeAll = function capitalizeAll(str) {
+export function capitalizeAll(str: string | null | undefined): string {
   return (str || '').split(/\b/)
-    .map(FormatUtils.capitalize)
+    .map(capitalize)
     .join('');
-};
+}
+
+export interface MetricSIObj {
+  key:string;
+  name: string;
+  value: number;
+  fullName: string
+} 
+export type MetricSIEntry = [string, MetricSIObj];
 
 /* eslint-disable comma-spacing */
-FormatUtils.metricSI = [
+export const metricSI: [string, { key: string; name: string; value: number; fullName: string }][] = [
   ['Y', { key: 'Y', name: 'yotta', value: 10 ** 24 , fullName: 'Septillion'    }],
   ['Z', { key: 'Z', name: 'zetta', value: 10 ** 21 , fullName: 'Sextillion'    }],
   ['E', { key: 'E', name: 'exa',   value: 10 ** 18 , fullName: 'Quintillion'   }],
@@ -674,7 +675,7 @@ FormatUtils.metricSI = [
   ['y', { key: 'y', name: 'yocto', value: 10 ** -24, fullName: 'Septillionth'  }]
 ];
 
-FormatUtils.metricSIMap = new Map(FormatUtils.metricSI);
+export const metricSIMap:Map<string, MetricSIObj> = new Map(metricSI);
 /* eslint-enable comma-spacing */
 
 /**
@@ -706,7 +707,7 @@ FormatUtils.metricSIMap = new Map(FormatUtils.metricSI);
  * utils.format.compactParse('12');   // 12
  * utils.format.compactParse('299.8M')// 299800000
  */
-FormatUtils.compactParse = function compactParse(compactStr) {
+export function compactParse(compactStr: string | null | undefined): number {
   const match = (compactStr || '').match(/([\d.]+)([a-zA-Zμ])?/);
   if (!match) {
     throw Error(`Unable to parse short number:${compactStr}`);
@@ -716,12 +717,12 @@ FormatUtils.compactParse = function compactParse(compactStr) {
   const char = match[2];
   let value = parsedNumber;
   
-  if (FormatUtils.metricSIMap.has(char)) {
-    value *= FormatUtils.metricSIMap.get(char).value;
+  if (metricSIMap.has(char)) {
+    value *= (metricSIMap.get(char) as { value: number }).value;
   }
   
   return value;
-};
+}
 
 /**
  * Converts a number to a compact version.
@@ -768,21 +769,21 @@ FormatUtils.compactParse = function compactParse(compactStr) {
  * }).format(987654321);
  * // → 988M
  */
-FormatUtils.compactNumber = function compactNumber(num, digits = 0) {
+export function compactNumber(num: number | null | undefined, digits = 0): string {
   if (num === 0) {
     return '0';
   } else if (Number.isNaN(num) || !num) {
     return '';
   }
 
-  let si = FormatUtils.metricSI.find((siEntry) => siEntry[1].value <= num);
-  if (!si) si = FormatUtils.metricSI[FormatUtils.metricSI.length - 1];
+  let si = metricSI.find((siEntry) => siEntry[1].value <= num);
+  if (!si) si = metricSI[metricSI.length - 1];
 
   const siValue = si[1].value;
   const siKey = si[0];
 
   return (num / siValue).toFixed(digits) + siKey;
-};
+}
 
 /**
  * Converts a value to a String, <br />
@@ -801,10 +802,10 @@ FormatUtils.compactNumber = function compactNumber(num, digits = 0) {
  * };
  * utils.format.safeConvertString(customObj); // 'String Value'
  */
-FormatUtils.safeConvertString = function safeConvertString(val, otherwise = null) {
+export function safeConvertString(val: unknown, otherwise: string | null = null): string | null {
   try {
     return String(val);
-  } catch (err) {
+  } catch (_err) {
     return otherwise;
   }
 };
@@ -820,7 +821,7 @@ FormatUtils.safeConvertString = function safeConvertString(val, otherwise = null
  * utils.format.safeConvertFloat('23.1'); // 23.1
  * utils.format.safeConvertFloat('not a number', -1); // -1
  */
-FormatUtils.safeConvertFloat = function safeConvertFloat(val, otherwise = NaN) {
+export function safeConvertFloat(val: unknown, otherwise = NaN): number {
   if (typeof val === 'string') {
     //-- replace the variable in memory to minimize garbage collection.
     // eslint-disable-next-line no-param-reassign
@@ -828,20 +829,20 @@ FormatUtils.safeConvertFloat = function safeConvertFloat(val, otherwise = NaN) {
   }
 
   try {
-    const result = Number.parseFloat(val);
+    const result = Number.parseFloat(val as string);
     if (Number.isNaN(result)) {
       return otherwise;
     }
     return result;
-  } catch (err) {
+  } catch (_err) {
     //-- cannot reliably get the exception to be thrown so cannot test this line
     /* istanbul ignore next */
     return otherwise;
   }
-};
+}
 
 /**
- * Converts a value to a Floating Number, <br />
+ * Converts a value to an Integer, <br />
  * Or returns `otherwise` if any exceptions are found or value is Not a Number.
  * 
  * @param {any} val - value to convert
@@ -849,10 +850,10 @@ FormatUtils.safeConvertFloat = function safeConvertFloat(val, otherwise = NaN) {
  * @param {Number} [radix = 10] - radix to use in converting the string
  * @returns {Number}
  * @example
- * utils.format.safeConvertFloat('23'); // 23
+ * utils.format.safeConvertInteger('23'); // 23
  * utils.format.safeConvertFloat('not a number', -1); // -1
  */
-FormatUtils.safeConvertInteger = function safeConvertInteger(val, otherwise = NaN, radix = 10) {
+export function safeConvertInteger(val: unknown, otherwise = NaN, radix = 10): number {
   if (typeof val === 'string') {
     //-- replace the variable in memory to minimize garbage collection.
     // eslint-disable-next-line no-param-reassign
@@ -860,17 +861,17 @@ FormatUtils.safeConvertInteger = function safeConvertInteger(val, otherwise = Na
   }
 
   try {
-    const result = Number.parseInt(val, radix);
+    const result = Number.parseInt(val as string, radix);
     if (Number.isNaN(result)) {
       return otherwise;
     }
     return result;
-  } catch (err) {
+  } catch (_err) {
     //-- cannot reliably get the exception to be thrown so cannot test this line
     /* istanbul ignore next */
     return otherwise;
   }
-};
+}
 
 /**
  * Converts a value to boolean.
@@ -893,7 +894,7 @@ FormatUtils.safeConvertInteger = function safeConvertInteger(val, otherwise = Na
  * utils.format.safeConvertBoolean('No'); // false
  * utils.format.safeConvertBoolean('0'); // false
  */
-FormatUtils.safeConvertBoolean = function safeConvertBoolean(val) {
+export function safeConvertBoolean(val: unknown): boolean {
   if (typeof val === 'string') {
     const valUpper = val.toUpperCase();
     return valUpper === 'TRUE' || valUpper === 'YES' || valUpper === '1';
@@ -901,7 +902,7 @@ FormatUtils.safeConvertBoolean = function safeConvertBoolean(val) {
   return val ? true : false;
 };
 
-FormatUtils.parseCommand = function parseCommand(commandStr) {
+export function parseCommand(commandStr: string): [string] | [string, string[]] {
   if (!commandStr || commandStr.indexOf('(') < 0) {
     return [commandStr];
   }
@@ -919,9 +920,9 @@ FormatUtils.parseCommand = function parseCommand(commandStr) {
     result = [commandStr];
   }
   return result;
-};
+}
 
-FormatUtils.prepareFormatterObject = function prepareFormatterObject(formatterObject) {
+export function prepareFormatterObject(formatterObject: Record<string, unknown>): Record<string, (...args: unknown[]) => unknown> {
   //-- @TODO: find way to reliably say that the propertyTranslation is an object
   // propertyTranslations.constructor.name !== 'Object'
   if (!formatterObject) {
@@ -939,17 +940,17 @@ FormatUtils.prepareFormatterObject = function prepareFormatterObject(formatterOb
     if (translationValType === 'function') {
       //-- do nothing
     } else if (translationValType === 'string') {
-      const [command, args = []] = FormatUtils.parseCommand(translationVal);
+      const [command, args = []] = parseCommand(translationVal as string);
       if (command === 'string') {
-        result[key] = FormatUtils.safeConvertString;
+        result[key] = safeConvertString;
       } else if (command === 'ellipsify' || command === 'elipsify' || command === 'ellipsis' || command === 'elipsis') {
-        result[key] = (str) => FormatUtils.ellipsify(str, args[0]);
+        result[key] = (str) => ellipsify(str, (args as string[])[0] ? Number((args as string[])[0]) : undefined);
       } else if (command === 'number' || command === 'float') {
-        result[key] = FormatUtils.safeConvertFloat;
+        result[key] = safeConvertFloat;
       } else if (command === 'int' || command === 'integer') {
-        result[key] = FormatUtils.safeConvertInteger;
+        result[key] = safeConvertInteger;
       } else if (command === 'bool' || command === 'boolean') {
-        result[key] = FormatUtils.safeConvertBoolean;
+        result[key] = safeConvertBoolean;
       } else {
         result[key] = () => translationVal;
       }
@@ -958,8 +959,8 @@ FormatUtils.prepareFormatterObject = function prepareFormatterObject(formatterOb
     }
   });
 
-  return result;
-};
+  return result as Record<string, (...args: unknown[]) => unknown>;
+}
 
 /**
  * Tests for empty values:
@@ -973,8 +974,7 @@ FormatUtils.prepareFormatterObject = function prepareFormatterObject(formatterOb
  * @param {any} val - a value to be tested 
  * @returns {Boolean} - TRUE if the value is not 'empty'
  */
-FormatUtils.isEmptyValue = (val) =>
-  //-- allow for 0s
+export const isEmptyValue = (val: unknown): boolean =>
   val === null || val === undefined || val === ''
   || (Array.isArray(val) && val.length === 0);
 
@@ -992,7 +992,7 @@ FormatUtils.isEmptyValue = (val) =>
  * @param {any} val - the value to be tested
  * @returns {Boolean} - TRUE if the value matches
  */
-FormatUtils.parseBoolean = function parseBoolean(val) {
+export function parseBoolean(val: unknown): boolean {
   return val === true
     || val === 1
     || val === 'TRUE'
@@ -1000,7 +1000,7 @@ FormatUtils.parseBoolean = function parseBoolean(val) {
     || val === 'true';
 };
 
-FormatUtils.isBoolean = function isBoolean(val) {
+export function isBoolean(val: unknown): boolean {
   return val === true || val === false
     || val === 1 || val === 0
     || val === 'TRUE' || val === 'FALSE'
@@ -1008,7 +1008,7 @@ FormatUtils.isBoolean = function isBoolean(val) {
     || val === 'true' || val === 'false';
 };
 
-FormatUtils.parseLocaleCache = new Map();
+const parseLocaleCache = new Map<string, string>();
 
 /**
  * Parses a given number, based on a {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/NumberFormat|Intl.NumberFormat}
@@ -1028,30 +1028,30 @@ FormatUtils.parseLocaleCache = new Map();
  * utils.format.parseNumber('1 000', 'fr-FR'); // 1000
  * utils.format.parseNumber('1 000,5', 'fr-FR'); // 1000.5
  */
-FormatUtils.parseNumber = function parseNumber(val, locale = 'en-US') {
+export function parseNumber(val: unknown, locale = 'en-US'): number | null | undefined {
   const valType = typeof val;
   if (valType === 'number') {
-    return val;
+    return val as number;
   } else if (valType === 'string') {
-    let separator;
-    if (FormatUtils.parseLocaleCache.has(locale)) {
-      separator = FormatUtils.parseLocaleCache.get(locale);
+    let separator: string;
+    if (parseLocaleCache.has(locale)) {
+      separator = parseLocaleCache.get(locale)!;
     } else {
-      const example = Intl.NumberFormat(locale).format('1.1');
+      const example = Intl.NumberFormat(locale).format(1.1);
       separator = example.charAt(1);
-      FormatUtils.parseLocaleCache.set(locale, separator);
+      parseLocaleCache.set(locale, separator);
     }
 
     const cleanPattern = new RegExp(`[^-+0-9${separator}]`, 'g');
-    const cleaned = val.replace(cleanPattern, '');
+    const cleaned = (val as string).replace(cleanPattern, '');
     const normalized = cleaned.replace(separator, '.');
 
     return parseFloat(normalized);
   } else if (!val) {
-    return val;
+    return val as number;
   }
-  return parseFloat(val);
-};
+  return parseFloat(String(val));
+}
 
 /**
  * Narrows to only fromLine - toLine (inclusive) within a string.
@@ -1072,10 +1072,10 @@ FormatUtils.parseNumber = function parseNumber(val, locale = 'en-US') {
  * //-- all lines after line 2
  * utils.format.limitLines(str, undefined, 2); // '2\n3\n4\n5'
  */
-FormatUtils.limitLines = function limitLines(str, toLine, fromLine, lineSeparator) {
+export function limitLines(str: unknown, toLine?: number, fromLine?: number, lineSeparator?: string): string {
   const cleanStr = typeof str === 'string'
     ? str
-    : JSON.stringify(str || '', FormatUtils.mapReplacer, 2);
+    : JSON.stringify(str || '', mapReplacer as (key: string, value: unknown) => unknown, 2);
   const cleanLine = lineSeparator || '\n';
 
   if (!toLine) {
@@ -1116,9 +1116,9 @@ FormatUtils.limitLines = function limitLines(str, toLine, fromLine, lineSeparato
  * //4
  * //5
  */
-FormatUtils.consoleLines = function consoleLines(str, toLine, fromLine, lineSeparator) {
-  console.log(FormatUtils.limitLines(str, toLine, fromLine, lineSeparator));
-};
+export function consoleLines(str: unknown, toLine?: number, fromLine?: number, lineSeparator?: string): void {
+  console.log(limitLines(str, toLine, fromLine, lineSeparator));
+}
 
 /**
  * Strips any html or xml tags from a string.
@@ -1132,11 +1132,11 @@ FormatUtils.consoleLines = function consoleLines(str, toLine, fromLine, lineSepa
  * utils.format.stripHtmlTags('Hello <br />Nice to see <b>you</b>'); // 'Hello Nice to see you'
  * utils.format.stripHtmlTags('example string'); // 'example string' -- untouched
  */
-FormatUtils.stripHtmlTags = function stripHtmlTags(str) {
+export function stripHtmlTags(str: string | null | undefined): string | null | undefined {
   if (!str) return str;
 
   return str.replace(/<[^>]+>/g, '');
-};
+}
 
 /**
  * Breaks apart a string into an array of strings by a new line character.
@@ -1169,7 +1169,7 @@ FormatUtils.stripHtmlTags = function stripHtmlTags(str) {
  *   'veniam, quis nostrud exercitation'
  * ];
  */
-FormatUtils.wordWrap = function wordWrap(str, options) {
+export function wordWrap(str: unknown, options?: { width?: number; cut?: boolean; trim?: boolean } | null): string | string[] | unknown {
   const cleanOptions = options || {};
   const {
     width = 50,
@@ -1209,13 +1209,15 @@ FormatUtils.wordWrap = function wordWrap(str, options) {
  *   line 3`); // 3
  * utils.format.lineCount('line 1\rLine2\rLine3', '\r'); // 3
  */
-FormatUtils.lineCount = function lineCount(str, newlineCharacter = '\n') {
-  const cleanNewLine = newlineCharacter || '\n';
+export function lineCount(str: unknown, newlineCharacter?: string | null): number {
+  const cleanNewLine = newlineCharacter ?? '\n';
   if (!str || !(typeof str === 'string')) return 0;
   const rex = new RegExp(`${cleanNewLine}`, 'g');
-  const match = str.match(rex);
+  const match = (str as string).match(rex);
   return match ? match.length + 1 : 1;
 };
+
+export type ReplacementEntry = [string | RegExp, string | null | undefined] | [string | RegExp];
 
 /**
  * Performs a set of replacement against a string or list of strings.
@@ -1267,17 +1269,28 @@ FormatUtils.lineCount = function lineCount(str, newlineCharacter = '\n') {
  * ```
  * 
  * @param {string|string[]} targetStr - the string to search for with the tuplets
- * @param {Array|Map<string|RegExp,string>} stringTupletsOrMap - [[search, replace]] or Map<String|RegExp,String>
+ * @param {ReplacementEntry[]|Map<string|RegExp,string>} stringTupletsOrMap - [[search, replace]] or Map<String|RegExp,String>
  * @returns {string[]} - the resulting list of strings
  * @see {@link module:format.replaceStringsGlobal} - to replace all instances
  */
-FormatUtils.replaceStrings = function replaceStrings(targetStr: string | string[], stringTupletsOrMap: [string | RegExp, string][] | Map<string | RegExp, string>) {
-  const cleanStrings = !targetStr ? [] : Array.isArray(targetStr) ? targetStr : [targetStr];
+export function replaceStrings(
+  targetStr: string | (string | null | undefined)[] | null | undefined,
+  stringTupletsOrMap: ReplacementEntry[] | Map<string | RegExp, string | null | undefined> | null | undefined
+): string[] {
+  const cleanStrings : string[] = !targetStr
+    ? []
+    : Array.isArray(targetStr)
+      ? targetStr as string[]
+      : [targetStr as string];
   // const signature = 'replaceStrings(targetStrings, stringTupletsOrMap)';
-  const replacementEntries: [string | RegExp, string][] = [];
+  const replacementEntries: [(string | RegExp),string][] = [];
 
+  if (!stringTupletsOrMap) {
+    const cleanList : string[] = cleanStrings.filter((s) => s ? true : false);
+    return cleanList;
+  }
   if (Array.isArray(stringTupletsOrMap)) {
-    stringTupletsOrMap.forEach((possibleReplacement: string | [string | RegExp, string]) => {
+    stringTupletsOrMap.forEach((possibleReplacement: string | ReplacementEntry) => {
       if (typeof possibleReplacement === 'string') {
         replacementEntries.push([possibleReplacement, '']);
       } else if (Array.isArray(possibleReplacement)) {
@@ -1294,11 +1307,12 @@ FormatUtils.replaceStrings = function replaceStrings(targetStr: string | string[
 
   return cleanStrings.map((stringToClean) => !stringToClean
     ? stringToClean
-    : replacementEntries.reduce((result: string, [replaceSearch, replaceWith]: [string | RegExp, string]) => !result
+    : replacementEntries.reduce(
+      (result: string, [replaceSearch, replaceWith = '']: ReplacementEntry) => !result
       ? result
       : replaceSearch instanceof RegExp
-        ? result.replace(replaceSearch, replaceWith)
-        : result.replaceAll(String(replaceSearch), replaceWith), stringToClean));
+        ? result.replace(replaceSearch, replaceWith || '')
+        : result.replaceAll(String(replaceSearch), replaceWith || ''), stringToClean));
 };
 
 /**
@@ -1309,12 +1323,16 @@ FormatUtils.replaceStrings = function replaceStrings(targetStr: string | string[
  * @returns {string} - the targetStr with the values replaced
  * @see {@link module:format.replaceStrings}
  */
-FormatUtils.replaceString = function replaceString(targetStr, stringTupletsOrMap) {
+export function replaceString(
+  targetStr: string | null | undefined,
+  stringTupletsOrMap: ReplacementEntry[] | Map<string | RegExp, string | null | undefined>
+): null | undefined | string {
+  if (!targetStr) return targetStr;
   if (Array.isArray(targetStr)) {
     throw Error('replaceString(targetStr, stringTupletsOrMap): targetStr was sent an array - please use replaceStrings instead');
   }
-  return FormatUtils.replaceStrings([targetStr], stringTupletsOrMap)[0];
-};
+  return replaceStrings([targetStr], stringTupletsOrMap)[0];
+}
 
 /**
  * Identify an array of words each from a string.
@@ -1351,8 +1369,14 @@ FormatUtils.replaceString = function replaceString(targetStr, stringTupletsOrMap
  * @param {String} additionalNonBreakingCharacters - each char in this string will not be treated as a word boundry
  * @returns {string[]} - collection of words
  */
-FormatUtils.extractWords = function extractWords(strToExtractFrom, additionalNonBreakingCharacters) {
-  if (!strToExtractFrom) return strToExtractFrom;
+export function extractWords(
+  strToExtractFrom: string | string[] | (any)[] | null | undefined,
+  additionalNonBreakingCharacters?: string
+): null | undefined | string[] {
+  if (!strToExtractFrom) {
+    if (strToExtractFrom === undefined) return undefined;
+    return null;
+  }
   
   const cleanNonBreaking = additionalNonBreakingCharacters
     ? additionalNonBreakingCharacters
@@ -1366,7 +1390,7 @@ FormatUtils.extractWords = function extractWords(strToExtractFrom, additionalNon
     ? strToExtractFrom
     : [strToExtractFrom];
   
-  return cleanStrings.reduce((result, str) => [...result, ...((str || '').match(regex) || [])], []);
+  return cleanStrings.reduce<string[]>((result, str) => [...result, ...((str || '').match(regex) || [])], []);
 };
 
 /**
@@ -1381,8 +1405,9 @@ FormatUtils.extractWords = function extractWords(strToExtractFrom, additionalNon
  * @param {any} val - Any value
  * @returns {Function} - a function that accepts no parameters, and always returns value provided
  */
-FormatUtils.constantFn = function constantFn(val: unknown) {
+export function constantFn(val: unknown): () => unknown {
   return () => val;
-};
+}
 
-export default FormatUtils;
+/** Replaces maps with strings. Used by hashMap and other modules. */
+export { mapReplacer };

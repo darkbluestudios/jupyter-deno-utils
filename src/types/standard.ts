@@ -36,3 +36,7 @@ export type ReducableFnFunctor = (accumulator: any, currentValue: any, currentIn
  * Type for functions passed in a standard Array.reduce method
  */
 export type ReducableFn = (fn:ReducableFnFunctor, initialValue:any) => any;
+
+export type JsonObj = {
+    value: any
+};

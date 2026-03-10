@@ -1,6 +1,4 @@
-import {
-  Spy
-} from "@std/testing/mock";
+import type { Spy } from "@std/testing/mock";
 
 /**
  * Interface for mocking the console

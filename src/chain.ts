@@ -1,6 +1,159 @@
 
-import { MappableFn, FilterFn, ReducableFn } from './types/standard.ts';
-import { JupyterRichContent } from "./types/jupyter.ts";
+import type { MappableFn, FilterFn, ReducableFnFunctor, JsonObj } from './types/standard.ts';
+import type { JupyterRichContent } from "./types/jupyter.ts";
+
+/**
+ * Simple monad like wrapper.
+ * 
+ * {@link ChainContainer#chain|See the chain method} for more.
+ * 
+ * Very helpful for taking values and then progressively working on them,
+ * instead of continually wrapping deeper in method calls.
+ * 
+ * Calling `chain(3)` - gives an object you can then chain calls against:
+ * 
+ * * {@link ChainContainer#close|.close()} - gets the value of the current chain
+ * * {@link ChainContainer#chain|.chain(function)} - where it is passed the value, and returns a new Chain with that value.
+ * * {@link ChainContainer#errorHandler|.errorHandler(fn)} - custom function called if an error is ever thrown
+ * 
+ * Along with methods that can iterate on each element, assuming the value in the chain is an Array.
+ * 
+ * * {@link ChainContainer#chainMap|.chainMap(function)} - where it calls the `.map` on value, and applies the function on every item in the array,
+ *      storing the result from the function. <br /> <b>(Useful for changing values without changing the original object))</b>
+ * * {@link ChainContainer#chainForEach|.chainForEach(function)} - where calls `.forEach` on value, and applies the function on every item,
+ *      without storing the result from the function. <br /> <b>(Useful for changing objects in-place)</b>
+ * * {@link ChainContainer#chainFlatMap|.chainFlatMap(function)} - where it calls `.flatMap` on value, and applies the function on every item,
+ *        flattening the results. <br /> <b>(Useful for expanding an array based on values in the array)</b>
+ * * {@link ChainContainer#chainFilter|.chainFilter(function)} - where it calls `.filter` on value, using the function on every item,
+ *        keeping the item in the list if the function returns true.
+ *        <br /> <b>(Useful for removing items from an array)</b>
+ * * {@link ChainContainer#chainReduce|.chainReduce(function, initialValue)} - where it calls `.reduce` on value, and reduces the value
+ *        to a single result.
+ *        <br /> <b>(Useful for reducing the array to a single value <br /> - like a concatenated string or sum total)</b>
+ * 
+ * There may be times you want to run side effects, or replace the value entirely. (This isn't common, but may be useful on occasion)
+ * 
+ * * {@link ChainContainer#debug|.debug()} - continues with the current value, but executes a console.log first
+ * * {@link ChainContainer#execute|.execute(function)} - where it calls a function, but doesn't pass on the result.
+ *        <br /> (This is useful for side-effects, like writing to files)
+ * * {@link ChainContainer#replace|.replace(value)} - replaces the value in the chain with a literal value,
+ *        regardless of the previous value.
+ * * {@link ChainContainer#toArray|.toArray()} - assuming the current value is an interatable, converts it to an array.
+ * 
+ * For example:
+ * 
+ * ```
+ * import chain from 'jsr:@darkbluestudios/chain';
+ * 
+ * addTwo = (value) => value + 2;
+ * 
+ * //-- we can always get the value
+ * chain(3).close();  // 3
+ * ```
+ * 
+ * but this is much easier if we continue to chain it
+ * 
+ * ```
+ * addTwo = (value) => value + 2;
+ * addTwo(3); // 5
+ * 
+ * chain(3)
+ *   .chain(addTwo) // (3 + 2)
+ *   .chain(addTwo) // (5 + 2)
+ *   .debug() // consoles 7 and passes the value along
+ *   // define a function inline
+ *   .chain((value) => value + 3) // (7 + 3)
+ *   .close()
+ * 
+ * // consoles out value `7`
+ * // returns value 10
+ * ```
+ * 
+ * Note that we can also map against values in the array
+ * 
+ * ```
+ * initializeArray = (size) => Array.from(Array(size)).map((val, index) => index);
+ * initializeArray(3); // [0, 1, 2]
+ * 
+ * addTwo = (value) => value + 2;
+ * addTwo(3); // 5
+ * 
+ * chain(3)
+ *   .chain(initializeArray) // [0, 1, 2]
+ *   .chainMap(addTwo) // [2, 3, 4] or [0 + 2, 1 + 2, 2 + 2]
+ *   .chainMap(addTwo)
+ *   .close();
+ * // [4, 5, 6]
+ * ```
+ * 
+ * Chain to log results while transforming values
+ * 
+ * ```
+ * results = [{ userId: 'abc123' }, { userId: 'xyz987' }];
+ * 
+ * // joining to existing collection of users
+ * 
+ * activeUsers = chain(results)
+ *  .chainMap((record) => users.get(record.userId))
+ *  .chainForEach(record => record.status =  'active')
+ *  .chain(records => d3.csv.format(records))
+ *  .execute(records => utils.file.writeFile('./log', d3.csv.format(records)))
+ *  .close()
+ * ```
+ * 
+ * Or even combine with other utility methods
+ * 
+ * ```
+ * badStr = 'I%20am%20the%20very%20model%20of%20a%20modern%20Major'
+ *  + '-General%0AI\'ve%20information%20vegetable%2C%20animal%2C%20'
+ *  + 'and%20mineral%0AI%20know%20the%20kings%20of%20England%2C%20'
+ *  + 'and%20I%20quote%20the%20fights%0AHistorical%0AFrom%20Marath'
+ *  + 'on%20to%20Waterloo%2C%20in%20order%20categorical';
+ * 
+ * chain(badStr)
+ *     .chain(decodeURIComponent)
+ *     .chain(v => v.split('\n'))
+ *     // .debug()                  // check the values along the way
+ *     .chainMap(line => ({ line, length: line.length }))
+ *     .chain(values => utils.table(values).render());
+ * ```
+ * 
+ * this can be more legible than the normal way to write this, <br />
+ * especially if you need to troubleshoot the value halfway through.
+ * 
+ * ```
+ * utils.table(
+ *  decodeURIComponent(badStr)
+ *    .split('\n')
+ *    .map(line => ({ line, length: line.length }))
+ * ).render()
+ * ```
+ * 
+ * and it renders out a lovely table like this:
+ * 
+ * line                                               |length
+ * --                                                 |--    
+ * I am the very model of a modern Major-General      |45    
+ * I've information vegetable, animal, and mineral    |47    
+ * I know the kings of England, and I quote the fights|51    
+ * Historical                                         |10    
+ * From Marathon to Waterloo, in order categorical    |47 
+ * 
+ * @module chain
+ * @example
+ * initializeArray = (size) => Array.from(Array(size)).map((val, index) => index);
+ * initializeArray(3); // [0, 1, 2]
+ * 
+ * addTwo = (value) => value + 2;
+ * addTwo(3); // 5
+ * 
+ * chain(3)
+ *   .chain(initializeArray) // [0, 1, 2]
+ *   .chainMap(addTwo) // [2, 3, 4] or [0 + 2, 1 + 2, 2 + 2]
+ *   .chainMap(addTwo)
+ *   .close();
+ * // [4, 5, 6]
+ */
 
 /**
  * Describes a Function applied to the Monad
@@ -422,7 +575,7 @@ export class ChainContainer {
    * @param {any} initialValue - initial value passed to the reducer
    * @returns {ChainContainer}
    */
-  chainReduce(fn:ReducableFn, initialValue:any):ChainContainer {
+  chainReduce(fn:ReducableFnFunctor, initialValue:any):ChainContainer {
     if (!Array.isArray(this.value)) throw Error(`chainReduce expected an array, but was passed:${this.value}`);
 
     return this.chain((value:any) => value.reduce(fn, initialValue));
@@ -644,9 +797,9 @@ export class ChainContainer {
    * toJSON replacement
    * @private
    */
-  toJSON():any {
-    const { ...cleanThis } = this; // eslint-disable-line
-    return cleanThis;
+  toJSON():JsonObj {
+    const { value } = this; // eslint-disable-line
+    return ({ value });
   }
 
   /**

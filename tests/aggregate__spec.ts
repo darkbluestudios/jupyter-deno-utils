@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import AggregateUtils from "../src/aggregate.ts";
+import * as AggregateUtils from "../src/aggregate.ts";
 
 const initializeWeather = () => [
   { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87 },

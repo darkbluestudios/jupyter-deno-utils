@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign, max-len */
 
 import schemaGenerator from "generate-schema";
-import FormatUtils from "./format.ts";
+import * as FormatUtils from "./format.ts";
 
 /** Options for fetching object properties */
 export interface FetchObjectOptions {
@@ -18,64 +18,61 @@ export interface CleanedProperties {
 /** Property or accessor: string path, or function (record) => value */
 export type PropertyOrFn = string | ((r: Record<string, unknown>) => unknown);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ObjectUtils: { [key: string]: any } = {};
-
 /**
  * Utility for working with and massaging javascript objects.
  * 
  * * Describe objects
- *   * {@link module:object.isObject|isObject()} - Determine if a given value is an Object and not a Number, String, Array or Date
- *   * {@link module:object.keys|keys()} - Safely get the keys of an object or list of objects
- *   * {@link module:object.getObjectPropertyTypes|getObjectPropertyTypes()} - describe the properties of a list of objects
- *   * {@link module:object.generateSchema|generateSchema()} - generate a schema / describe properties of a list of objects
- *   * {@link module:object.findWithoutProperties|findWithoutProperties()} - find objects without ALL the properties specified
- *   * {@link module:object.findWithoutProperties|findWithProperties()} - find objects with any of the properties specified
- *   * {@link module:object.propertyValueSample|propertyValueSample(collection)} - finds non-empty values for all properties found in the collection
+ *   * {@link isObject} - Determine if a given value is an Object and not a Number, String, Array or Date
+ *   * {@link keys} - Safely get the keys of an object or list of objects
+ *   * {@link getObjectPropertyTypes} - describe the properties of a list of objects
+ *   * {@link generateSchema} - generate a schema / describe properties of a list of objects
+ *   * {@link findWithoutProperties} - find objects without ALL the properties specified
+ *   * {@link findWithProperties} - find objects with any of the properties specified
+ *   * {@link propertyValueSample} - finds non-empty values for all properties found in the collection
  * * Fetch child properties from related objects
- *   * {@link module:object.fetchObjectProperty|fetchObjectProperty(object, string)} - use dot notation to bring a child property onto a parent
- *   * {@link module:object.fetchObjectProperties|fetchObjectProperties(object, string[])} - use dot notation to bring multiple child properties onto a parent
- *   * {@link module:object.join|join(array, index, map, fn)} - join a collection against a map by a given index
- *   * {@link module:object.joinProperties|join(array, index, map, ...fields)} - join a collection, and copy properties over from the mapped object.
+ *   * {@link fetchObjectProperty} - use dot notation to bring a child property onto a parent
+ *   * {@link fetchObjectProperties} - use dot notation to bring multiple child properties onto a parent
+ *   * {@link join} - join a collection against a map by a given index
+ *   * {@link joinProperties} - join a collection, and copy properties over from the mapped object.
  * * Fetch values safely
- *   * {@link module:object.propertyFromList|propertyFromList(array, propertyName)} - fetches a specific property from all objects in a list
- *   * {@link module:object.extractObjectProperty|extractObjectProperty(list, propertyNameOrFn)} - extracts a property or fn across all objects in list.
- *   * {@link module:object.extractObjectProperties|extractObjectProperties(list, propertyNameOrFnMap)} - extracts multiple propertie or fn across all objects in list.
+ *   * {@link propertyFromList} - fetches a specific property from all objects in a list
+ *   * {@link extractObjectProperty} - extracts a property or fn across all objects in list.
+ *   * {@link extractObjectProperties} - extracts multiple properties or fn across all objects in list.
  * * Apply deep values safely
- *   * {@link module:object.assign|objAssign(object, property, value)} - Applies properties to an object in functional programming style.
- *   * {@link module:object.getSet|getSet(object, property, functor)} - calls a function with the current value on an object, allowing for decrementing/incrementing/etc.
- *   * {@link module:object.augment|augment(object, augmentFn)} - Applies properties to an object similar to Map
- *   * {@link module:object.assignEntities|objAssignEntities(object, [property, value])} - Applies properties to an object using Array values - [key,value]
- *   * {@link module:object.setPropertyDefaults|setPropertyDefaults()} - sets values for objects that don't currently have the property
- *   * {@link module:object.applyPropertyValue|object.applyPropertyValue} - safely apply a value deeply and safely
- *   * {@link module:object.applyPropertyValues|object.applyPropertyValues} - apply an array of values safely and deeply against a list of objects.
+ *   * {@link assign} - Applies properties to an object in functional programming style.
+ *   * {@link getSet} - calls a function with the current value on an object, allowing for decrementing/incrementing/etc.
+ *   * {@link augment} - Applies properties to an object similar to Map
+ *   * {@link assignEntities} - Applies properties to an object using Array values - [key,value]
+ *   * {@link setPropertyDefaults} - sets values for objects that don't currently have the property
+ *   * {@link applyPropertyValue} - safely apply a value deeply and safely
+ *   * {@link applyPropertyValues} - apply an array of values safely and deeply against a list of objects.
  * * Manipulating objects
- *   * {@link module:object.augmentInherit|augmentInherit(object, augmentFn)} - Applies properties to a collection of objects, 'remembering' the last value - useful for 1d to *D lists.
- *   * {@link module:object.propertyInherit|object.propertyInherit(object, ...propertyName)} - Copies values from one record to the next if the current value is undefined.
- *   * {@link module:object.selectObjectProperties|selectObjectProperties()} - keep only specific properties
- *   * {@link module:object.filterObjectProperties|filterObjectProperties()} - remove specific properties
- *   * {@link module:object.mapProperties|mapProperties(collection, fn, ...properties)} - map multiple properties at once (like parseInt, or toString)
- *   * {@link module:object.formatProperties|formatProperties(collection, propertyTranslation)} - map specific properties (ex: toString, toNumber, etc)
- *   * {@link module:object.union|union(objectList1, objectList2)} - Unites the properties of two collections of objects.
+ *   * {@link augmentInherit} - Applies properties to a collection of objects, 'remembering' the last value - useful for 1d to *D lists.
+ *   * {@link propertyInherit} - Copies values from one record to the next if the current value is undefined.
+ *   * {@link selectObjectProperties} - keep only specific properties
+ *   * {@link filterObjectProperties} - remove specific properties
+ *   * {@link mapProperties} - map multiple properties at once (like parseInt, or toString)
+ *   * {@link formatProperties} - map specific properties (ex: toString, toNumber, etc)
+ *   * {@link union} - Unites the properties of two collections of objects.
  * * Rename properties
- *   * {@link module:object.cleanProperties|cleanProperties()} - correct inaccessible property names in a list of objects - in place
- *   * {@link module:object.cleanProperties2|cleanProperties2()} - correct inaccessible property names in a list of objects - on a cloned list
- *   * {@link module:object.cleanPropertyNames|cleanPropertyNames()} - create a translation of inaccessible names to accessible ones
- *   * {@link module:object.cleanPropertyName|cleanPropertyName()} - create a translation of a specific property name to be accessible.
- *   * {@link module:object.renameProperties|renameProperties()} - Use a translation from old property names to new ones
+ *   * {@link cleanProperties} - correct inaccessible property names in a list of objects - in place
+ *   * {@link cleanProperties2} - correct inaccessible property names in a list of objects - on a cloned list
+ *   * {@link cleanPropertyNames} - create a translation of inaccessible names to accessible ones
+ *   * {@link cleanPropertyName} - create a translation of a specific property name to be accessible.
+ *   * {@link renameProperties} - Use a translation from old property names to new ones
  * * Flatten object properties
- *   * {@link module:object.collapse|collapse()} - coalesce properties from all nested objects to the base object.
- *   * {@link module:object.flatten|flatten()} - creates dot notation properties (similar to arrow notation) of all child objects.
- *   * {@link module:object.expand|expand()}  - expands dot notation properties onto sub children (inverse of flatten)
+ *   * {@link collapse} - coalesce properties from all nested objects to the base object.
+ *   * {@link flatten} - creates dot notation properties (similar to arrow notation) of all child objects.
+ *   * {@link expand} - expands dot notation properties onto sub children (inverse of flatten)
  * * Create Map of objects by key
- *   * {@link module:object.mapByProperty|mapByProperty()}
- *   * {@link module:group.by|group.by(collection, accessor)}
+ *   * {@link mapByProperty}
+ *   * group.by(collection, accessor)
  * * Convert collections of objects
- *   * {@link module:object.objectCollectionFromArray|objectCollectionFromArray} - convert rows/columns 2d array to objects
- *   * {@link module:object.objectCollectionToArray|objectCollectionToArray} - convert objects to a rows/columns 2d array
- *   * {@link module:object.objectCollectionFromDataFrameObject|objectCollectionFromDataFrameObject} - convert tensor object with each field as 1d array of values
- *   * {@link module:object.objectCollectionToDataFrameObject|objectCollectionToDataFrameObject} - convert objects from a tensor object
- *   * {@link module:object.splitIntoDatums|splitIntoDatums(object, fieldsToSplitBy)} - separate objects into series by fields
+ *   * {@link objectCollectionFromArray} - convert rows/columns 2d array to objects
+ *   * {@link objectCollectionToArray} - convert objects to a rows/columns 2d array
+ *   * {@link objectCollectionFromDataFrameObject} - convert tensor object with each field as 1d array of values
+ *   * {@link objectCollectionToDataFrameObject} - convert objects from a tensor object
+ *   * {@link splitIntoDatums} - separate objects into series by fields
  * 
  * @module object
  * @exports object
@@ -89,20 +86,20 @@ const ObjectUtils: { [key: string]: any } = {};
  * @return {Function}
  * @private
  */
-ObjectUtils.evaluateFunctionOrProperty = function evaluateFunctionOrProperty(fnOrProp: PropertyOrFn | null | undefined) {
+export function evaluateFunctionOrProperty(fnOrProp: PropertyOrFn | null | undefined): (r: Record<string, unknown>) => unknown {
   if (!fnOrProp) {
-    return (r) => r;
+    return (r: Record<string, unknown>) => r;
   } else if (typeof fnOrProp === 'string') {
     if (fnOrProp.match(/[[.]/)) {
-      return (r) => ObjectUtils.fetchObjectProperty(r, fnOrProp, { safeAccess: true });
+      return (r: Record<string, unknown>) => fetchObjectProperty(r, fnOrProp, { safeAccess: true });
     }
-    return (r) => r[fnOrProp];
+    return (r: Record<string, unknown>) => r[fnOrProp];
   } else if (typeof fnOrProp === 'function') {
     return fnOrProp;
   }
 
   throw (Error('Send either a Function or Property Name or null for a simple array'));
-};
+}
 
 /**
  * Identifies keys from an object, but handles null safely.
@@ -130,9 +127,9 @@ const setAddAll = <T>(iteratable: Iterable<T>, targetSet: Set<T>): Set<T> => {
 /**
  * The maximum depth that a collapse will go to 
  * @type {Number}
- * @see {@link module:object.collapse|collapse()} - used with collapse
+ * @see {@link collapse} - used with collapse
  */
-ObjectUtils.MAX_COLLAPSE_DEPTH = 50;
+export const MAX_COLLAPSE_DEPTH = 50;
 
 /**
  * Assign a property to an object and return object
@@ -146,7 +143,7 @@ ObjectUtils.MAX_COLLAPSE_DEPTH = 50;
  * @param {any} value -
  * @returns {Object}
  */
-ObjectUtils.assign = function objAssign(obj, propertyName, value, ...propertyNameValues) {
+export function assign(obj: Record<string, unknown> | null | undefined, propertyName: string, value: unknown, ...propertyNameValues: (string | unknown)[]): Record<string, unknown> {
   if ((propertyName === null || propertyName === undefined)) {
     throw Error('Expecting at least one property name to be passed');
   } else if (typeof propertyName !== 'string') {
@@ -154,16 +151,17 @@ ObjectUtils.assign = function objAssign(obj, propertyName, value, ...propertyNam
   }
 
   if (!obj) obj = {};
-  let result = { ...obj };
-  result[propertyName] = value; //eslint-disable-line no-param-reassign
+  let result: Record<string, unknown> = { ...obj };
+  result[propertyName] = value;
 
   if (propertyNameValues.length > 0) {
-    result = ObjectUtils.objAssign.apply(ObjectUtils, [result, ...propertyNameValues]);
+    result = assign(result, ...(propertyNameValues as [string, unknown, ...(string | unknown)[]]));
   }
 
   return result;
-};
-ObjectUtils.objAssign = ObjectUtils.assign;
+}
+/** @deprecated Use assign */
+export const objAssign = assign;
 
 /**
  * Assign a property to an object and return object
@@ -177,7 +175,7 @@ ObjectUtils.objAssign = ObjectUtils.assign;
  * @param {any} value -
  * @returns {Object}
  */
-ObjectUtils.assignIP = function objAssignIP(obj, propertyName, value, ...propertyNameValues) {
+export function assignIP(obj: Record<string, unknown> | null | undefined, propertyName: string, value: unknown, ...propertyNameValues: (string | unknown)[]): Record<string, unknown> {
   if ((propertyName === null || propertyName === undefined)) {
     throw Error('Expecting at least one property name to be passed');
   } else if (typeof propertyName !== 'string') {
@@ -185,15 +183,16 @@ ObjectUtils.assignIP = function objAssignIP(obj, propertyName, value, ...propert
   }
 
   if (!obj) obj = {};
-  obj[propertyName] = value; //eslint-disable-line no-param-reassign
+  obj[propertyName] = value;
 
   if (propertyNameValues.length > 0) {
-    ObjectUtils.objAssignIP.apply(ObjectUtils, [obj, ...propertyNameValues]);
+    assignIP(obj, ...(propertyNameValues as [string, unknown, ...(string | unknown)[]]));
   }
 
   return obj;
-};
-ObjectUtils.objAssignIP = ObjectUtils.assignIP;
+}
+/** @deprecated Use assignIP */
+export const objAssignIP = assignIP;
 
 /**
  * Assigns multiple object entities [[property, value], [property, value], ...];
@@ -202,7 +201,7 @@ ObjectUtils.objAssignIP = ObjectUtils.assignIP;
  * @param {Array} entities - 2d array [[property, value], ...]
  * @returns {Object}
  */
-ObjectUtils.assignEntities = function objAssignEntities(obj, entities) {
+export function assignEntities(obj: Record<string, unknown> | null | undefined, entities: [string, unknown][]): Record<string, unknown> {
   if (!obj) obj = {};
 
   if (!Array.isArray(entities)) {
@@ -216,8 +215,9 @@ ObjectUtils.assignEntities = function objAssignEntities(obj, entities) {
   });
 
   return obj;
-};
-ObjectUtils.objAssignEntities = ObjectUtils.assignEntities;
+}
+/** @deprecated Use assignEntities */
+export const objAssignEntities = assignEntities;
 
 /**
  * Use this for times where you want to update a value
@@ -240,7 +240,7 @@ ObjectUtils.objAssignEntities = ObjectUtils.assignEntities;
  * utils.object.getSet(initialObject, key, functor);
  * 
  * // equivalent to
- * // intitialObject[key] = intitialObject[key] ? initialObject[key] + 1 : 1`
+ * // initialObject[key] = initialObject[key] ? initialObject[key] + 1 : 1`
  * // but in a way that is repeatable across many values
  * 
  * utils.object.getSet(initialObject, key, functor);
@@ -259,33 +259,34 @@ ObjectUtils.objAssignEntities = ObjectUtils.assignEntities;
  * @param {any} functor.map - the third argument is the map being acted upon
  * @returns {Map}
  */
-ObjectUtils.getSet = function getSet(obj, field, functor) {
+export function getSet<T extends Record<string, unknown>>(obj: T, field: string, functor: (value: unknown, key: string, obj: T) => unknown): T {
   const currentValue = Object.hasOwn(obj, field) ? obj[field] : undefined;
-  obj[field] = functor(currentValue, field, obj);
+  (obj as Record<string, unknown>)[field] = functor(currentValue, field, obj);
   return obj;
-};
-ObjectUtils.update = ObjectUtils.getSet;
+}
+/** Alias for getSet */
+export const update = getSet;
 
 /**
  * Retrieves a property through a name of a property or a function
  * @param {Object[]} collection - collection of objects
  * @param {Function | String} propertyOrFn - Name of the property or Function to return a value
  * @returns {any} - property value or return value from the function
- * @see {@link module:object.getSet|object.getSet()} - sets a value safely
+ * @see {@link getSet} - sets a value safely
  * @example
  * data = { id: '123', name: 'jim' };
  * utils.object.get(data, 'name'); // 'jim'
  * utils.object.get(data, (o) => o.id); // '123'
  */
-ObjectUtils.get = function get(obj, propertyOrFn) {
+export function get(obj: Record<string, unknown>, propertyOrFn: PropertyOrFn): unknown {
   if (!propertyOrFn) throw new Error('object.mapByProperty: expects a propertyName');
 
-  const cleanedFunc = ObjectUtils.evaluateFunctionOrProperty(propertyOrFn);
+  const cleanedFunc = evaluateFunctionOrProperty(propertyOrFn);
   return cleanedFunc(obj);
-};
+}
 
 /**
- * Runs a map over a collection, and adds properties the the objects.
+ * Runs a map over a collection, and adds properties to the objects.
  * 
  * @param {Object | Array<Object>} objCollection - object or collection of objects to augment
  * @param {Function | Object} mappingFn - (record) => {Object} mapping function <br />
@@ -311,7 +312,7 @@ ObjectUtils.get = function get(obj, propertyOrFn) {
  * //... then the source data is updated
  * data[0] // { source: 'A', value: 5, origin: 's_A' }
  */
-ObjectUtils.augment = function augment(objCollection, mappingFn, inPlace = false) {
+export function augment(objCollection: Record<string, unknown> | Record<string, unknown>[], mappingFn: (record: Record<string, unknown>) => Record<string, unknown>, inPlace = false): Record<string, unknown>[] {
   const collection = Array.isArray(objCollection)
     ? objCollection
     : [objCollection];
@@ -334,8 +335,8 @@ ObjectUtils.augment = function augment(objCollection, mappingFn, inPlace = false
  * @param {Object[]} collection - collection of objects
  * @param {Function | String} propertyOrFn - Name of the property or Function to return a value
  * @returns {Map<String, Object>} - map using the propertyName as the key
- * @see {@link module:group.by|group(collection, propertyOrFn)} - if there is a possibility the records are not unique
- * @see {@link module:object.join|object.join()} - join two objects by a shared index
+ * @see group.by(collection, propertyOrFn) - if there is a possibility the records are not unique
+ * @see {@link join} - join two objects by a shared index
  * @example
  * const data = [{ id: '123', name: 'jim' },
  *    { id: '456', name: 'mary' },
@@ -346,10 +347,10 @@ ObjectUtils.augment = function augment(objCollection, mappingFn, inPlace = false
  * //      '456': { id: '456', name: 'mary' },
  * //      '789': { id: '789', name: 'sue' });
  */
-ObjectUtils.mapByProperty = function mapByProperty(collection, propertyOrFn) {
+export function mapByProperty(collection: Record<string, unknown>[] | null, propertyOrFn: PropertyOrFn): Map<unknown, Record<string, unknown>> {
   if (!propertyOrFn) throw new Error('object.mapByProperty: expects a propertyName');
 
-  const cleanedFunc = ObjectUtils.evaluateFunctionOrProperty(propertyOrFn);
+  const cleanedFunc = evaluateFunctionOrProperty(propertyOrFn);
   
   return (collection || []).reduce(
     (result, entry) => {
@@ -368,7 +369,7 @@ ObjectUtils.mapByProperty = function mapByProperty(collection, propertyOrFn) {
  * @param {Number} [maxRows=-1] - optional param - maximum number of rows to investigate
  *  for new keys if array passed. (ex: 2 means only investigate the first two rows)
  * @returns {String[]} - array of all the keys found
- * @see {@link module:describe.describeObjects}
+ * @see describe.describeObjects
  * @example
  * 
  * //-- finding all properties from a heterogeneous list
@@ -381,14 +382,14 @@ ObjectUtils.mapByProperty = function mapByProperty(collection, propertyOrFn) {
  *    .map(key => `${key}:${result[key]}`);  //-- you can now run map methods on those keys
  * // [ 'name:john', 'age:23', 'score:4' ]
  */
-ObjectUtils.keys = function keys(objOrArray = {}, maxRows = -1) {
+export function keys(objOrArray: Record<string, unknown> | (Record<string, unknown> | null)[] = {}, maxRows = -1): string[] {
   if (!Array.isArray(objOrArray)) {
     return keysFromObject(objOrArray);
   }
 
-  const result = new Set();
+  const result = new Set<string>();
   if (maxRows < 1) {
-    objOrArray.every((item, index) => setAddAll(keysFromObject(item), result));
+    objOrArray.every((item, _index) => setAddAll(keysFromObject(item), result));
   } else {
     //-- check 
     objOrArray.every((item, index) => {
@@ -427,12 +428,12 @@ ObjectUtils.keys = function keys(objOrArray = {}, maxRows = -1) {
  * @param  {...String} listOfKeys - a list of keys to check if they are defined within objOrArray
  * @returns {String[]} - list of keys that are both in the objOrArray or within listOfKeys
  */
-ObjectUtils.keysWithinList = function keysWithinList(objOrArray, ...listOfKeys) {
-  const cleanListOfKeys = listOfKeys.length > 0 && Array.isArray(listOfKeys[0])
+export function keysWithinList(objOrArray: Record<string, unknown> | Record<string, unknown>[], ...listOfKeys: (string | string[])[]): string[] {
+  const cleanListOfKeys = (listOfKeys.length > 0 && Array.isArray(listOfKeys[0])
     ? listOfKeys[0]
-    : listOfKeys;
-  
-  const keySet = new Set(ObjectUtils.keys(objOrArray));
+    : listOfKeys) as string[];
+
+  const keySet = new Set(keys(objOrArray));
   const keyIntersection = cleanListOfKeys.filter((keyToTest) => keySet.has(keyToTest));
   return keyIntersection;
 };
@@ -467,34 +468,34 @@ ObjectUtils.keysWithinList = function keysWithinList(objOrArray, ...listOfKeys) 
  * @param  {...String} listOfKeys - a list of keys to check if they are defined within objOrArray
  * @returns {String[]} - list of keys that are both in the objOrArray or within listOfKeys
  */
-ObjectUtils.keysNotInList = function keysNotInList(objOrArray, ...listOfKeys) {
+export function keysNotInList(objOrArray: Record<string, unknown> | Record<string, unknown>[], ...listOfKeys: (string | string[])[]): string[] {
   const setOfKeysToCheck = listOfKeys.length > 0 && Array.isArray(listOfKeys[0])
     ? new Set(listOfKeys[0])
     : new Set(listOfKeys);
   
-  const keys = ObjectUtils.keys(objOrArray);
-  const keyIntersection = keys.filter((keyToTest) => !setOfKeysToCheck.has(keyToTest));
+  const keyList = keys(objOrArray);
+  const keyIntersection = keyList.filter((keyToTest) => !setOfKeysToCheck.has(keyToTest));
   return keyIntersection;
 };
 
 /**
  * Cleans all the properties of the array of objects in place (does not make Copies)
  * 
- * **NOTE: This is faster than {@link module:ObjectUtils.cleanProperties2|cleanProperties2},
+ * **NOTE: This is faster than {@link cleanProperties2},
  * but the standard order of the properties (using Object.keys) will be altered.**
  * 
  * @param {Object[]} objectsToBeCleaned -
  * @return {Object[]} - cleaned objects
  */
-ObjectUtils.cleanProperties = function cleanProperties(objectsToBeCleaned) {
-  return ObjectUtils.renameProperties(
+export function cleanProperties(objectsToBeCleaned: Record<string, unknown>[]): Record<string, unknown>[] | Record<string, unknown> {
+  return renameProperties(
     objectsToBeCleaned,
-    ObjectUtils.cleanPropertyNames(objectsToBeCleaned)
+cleanPropertyNames(objectsToBeCleaned)
   );
 };
 
 /**
- * Labels and Values from {@link module:object.cleanProperties2|object.cleanProperties2}
+ * Labels and Values from {@link cleanProperties2}
  * 
  * ```
  * {
@@ -522,7 +523,7 @@ ObjectUtils.cleanProperties = function cleanProperties(objectsToBeCleaned) {
  * 
  * @param {Object[]} objectsToBeCleaned - collection of objects to be cleaned
  * @returns {CleanedProperties} - { labels: Object - propertyName:originalProperty, values: cleaned collection }
- * @see {@link module:object~CleanedProperties}
+ * @see CleanedProperties
  * @example
 const badData = [
   { '"name"': 'john', num: '192', ' kind': ' s', '1st date': ' 2021-07-11T22:23:07+0100' },
@@ -539,16 +540,16 @@ utils.object.cleanProperties2(badData);
 //   ]
 // }
  */
-ObjectUtils.cleanProperties2 = function cleanProperties2(objectsToBeCleaned) {
-  const cleanedPropertyNames = ObjectUtils.cleanPropertyNames(objectsToBeCleaned);
-  const keys = ObjectUtils.keys(cleanedPropertyNames);
+export function cleanProperties2(objectsToBeCleaned: Record<string, unknown>[] | null): CleanedProperties {
+  const cleanedPropertyNames = cleanPropertyNames(objectsToBeCleaned ?? []);
+  const keyList = keys(cleanedPropertyNames);
 
-  const translation = keys.reduce((result, key) => ObjectUtils
-    .objAssignIP(result, cleanedPropertyNames[key], ObjectUtils.lightlyCleanProperty(key)), {});
+  const translation = keyList.reduce((result, key) =>
+    assignIP(result, cleanedPropertyNames[key], lightlyCleanProperty(key)) as Record<string, string>, {} as Record<string, string>);
   
   const values = (objectsToBeCleaned || [])
-    .map((obj) => keys.reduce(
-      (result, key) => ObjectUtils.objAssignIP(result, cleanedPropertyNames[key], obj[key]),
+    .map((obj) => keyList.reduce(
+      (result, key) => assignIP(result, cleanedPropertyNames[key], obj[key]),
       {}
     ));
   
@@ -561,7 +562,7 @@ ObjectUtils.cleanProperties2 = function cleanProperties2(objectsToBeCleaned) {
  * @param {String} propertyName - property name to be cleaned
  * @returns {String}
  */
-ObjectUtils.lightlyCleanProperty = function lightlyCleanProperty(propertyName) {
+export function lightlyCleanProperty(propertyName: string): string {
   //-- assume property name is a string
   return propertyName.trim()
     .replace(/^["']/, '')
@@ -573,15 +574,15 @@ ObjectUtils.lightlyCleanProperty = function lightlyCleanProperty(propertyName) {
  * @param {(Object| String[])} objectKeys -
  * @return {Object} - object with key:value as original:new
  */
-ObjectUtils.cleanPropertyNames = function cleanPropertyNames(target) {
-  let originalKeys;
+export function cleanPropertyNames(target: Record<string, unknown> | Record<string, unknown>[] | string[] | null): Record<string, string> {
+  let originalKeys: string[];
   if (!target) {
     return {};
   } else if (Array.isArray(target)) {
     if ((typeof target[0]) === 'string') {
-      originalKeys = target;
+      originalKeys = target as string[];
     } else {
-      originalKeys = ObjectUtils.keys(target);
+      originalKeys = keys(target as Record<string, unknown> | (Record<string, unknown> | null)[]);
     }
   } else {
     originalKeys = Object.keys(target);
@@ -589,7 +590,7 @@ ObjectUtils.cleanPropertyNames = function cleanPropertyNames(target) {
 
   const result = {};
   originalKeys.forEach((key) => {
-    result[key] = ObjectUtils.cleanPropertyName(key);
+    result[key] = cleanPropertyName(key);
   });
   return result;
 };
@@ -599,7 +600,7 @@ ObjectUtils.cleanPropertyNames = function cleanPropertyNames(target) {
  * @param {String} property -
  * @returns {String}
  */
-ObjectUtils.cleanPropertyName = function cleanPropertyName(property) {
+export function cleanPropertyName(property: string): string {
   const cleanProperty = property.trim()
     .replace(/[^a-zA-Z0-9]/g, ' ')
     .trim()
@@ -631,11 +632,11 @@ ObjectUtils.cleanPropertyName = function cleanPropertyName(property) {
  * @param {String[]} updatedKeys - list of keys to change TO
  * @returns {Object[]}
  */
-ObjectUtils.renamePropertiesFromList = function renamePropertiesFromList(
+export function renamePropertiesFromList(
   object: Record<string, unknown>,
   originalKeys: string[] | Iterable<string>,
   targetKeys: string[]
-) {
+): Record<string, unknown> {
   const result: Record<string, unknown> = { ...object };
   Array.from(originalKeys).forEach((originalKey: string, index: number) => {
     const targetKey = targetKeys[index];
@@ -680,26 +681,26 @@ ObjectUtils.renamePropertiesFromList = function renamePropertiesFromList(
  * @param {Object} propertyTranslations - where property:value is original:new
  * @returns {Object[]}
  */
-ObjectUtils.renameProperties = function renameProperties(objects, propertyTranslations) {
+export function renameProperties(objects: Record<string, unknown>[] | Record<string, unknown> | null, propertyTranslations: Record<string, string>): Record<string, unknown>[] | Record<string, unknown> {
   const originalKeys = Object.keys(propertyTranslations);
   const targetKeys = Object.values(propertyTranslations);
 
   if (Array.isArray(objects)) {
     return objects.map(
-      (object) => ObjectUtils.renamePropertiesFromList(object, originalKeys, targetKeys)
+      (object: Record<string, unknown> | null): Record<string, unknown> => renamePropertiesFromList(object ?? {}, originalKeys, targetKeys)
     );
   }
-  return ObjectUtils.renamePropertiesFromList(objects, originalKeys, targetKeys);
+  return renamePropertiesFromList(objects ?? {}, originalKeys, targetKeys);
 };
 
-const collapseSpecificObject = function collapseSpecificObject(sourceObj, targetObj, depth) {
-  if (depth > ObjectUtils.MAX_COLLAPSE_DEPTH) return;
+const collapseSpecificObject = function collapseSpecificObject(sourceObj: Record<string, unknown>, targetObj: Record<string, unknown> | null, depth: number): Record<string, unknown> {
+  if (depth > MAX_COLLAPSE_DEPTH) return sourceObj;
   if (targetObj) {
     const targetObjProperties = Object.getOwnPropertyNames(targetObj);
     targetObjProperties.forEach((prop) => {
       const propType = typeof targetObj[prop];
       if (propType === 'object') {
-        collapseSpecificObject(sourceObj, targetObj[prop], depth + 1);
+        collapseSpecificObject(sourceObj, targetObj[prop] as Record<string, unknown> | null, depth + 1);
       } else {
         sourceObj[prop] = targetObj[prop];
       }
@@ -721,7 +722,7 @@ const collapseSpecificObject = function collapseSpecificObject(sourceObj, target
  * @returns {Object} - object with all the properties added
  * @see #MAX_COLLAPSE_DEPTH - library property that defines how far to collapse
  */
-ObjectUtils.collapse = function collapse(targetObj) {
+export function collapse(targetObj: Record<string, unknown> | null): Record<string, unknown> {
   return collapseSpecificObject({}, targetObj, 0);
 };
 
@@ -730,7 +731,7 @@ ObjectUtils.collapse = function collapse(targetObj) {
  * @param {any} testValue - value to be tested
  * @returns {Boolean} - whether the testValue is an Object and not an Array or a Date.
  */
-ObjectUtils.isObject = (o) => o != null
+export const isObject = (o: unknown): o is Record<string, unknown> => o != null
   && typeof o === 'object'
   && !Array.isArray(o)
   && !(o instanceof Date);
@@ -755,28 +756,29 @@ ObjectUtils.isObject = (o) => o != null
  * //   'course.professor.id': 10101, 'course.professor.first': 'jim', 'course.professor.last': 'gifford' };
  * ```
  * 
- * See flatten for a an alternative to achieve the same result.
+ * See flatten for an alternative to achieve the same result.
  * 
  * @param {Object} sourceObj - The object to review for source values / properties
  * @param {Object} [targetObj={}] - The object to apply the dot notation properties onto
  * @param {String} [prefix=''] - the string prefix of any properties found on source, to apply onto target
  * @returns {Object} - the targetObj with the properties applied (in place)
  */
-ObjectUtils.flattenObjectOntoAnother = function flattenObjectOntoAnother(sourceObj, targetObj, prefix) {
+export function flattenObjectOntoAnother(sourceObj: unknown, targetObj?: Record<string, unknown>, prefix?: string): Record<string, unknown> | unknown {
   const cleanTarget = targetObj || {};
   const cleanPrefix = prefix || '';
 
-  if (!ObjectUtils.isObject(sourceObj)) {
+  if (!isObject(sourceObj)) {
     return sourceObj;
   }
-  
-  const sourceKeys = ObjectUtils.keys(sourceObj);
-  
+
+  const obj = sourceObj as Record<string, unknown>;
+  const sourceKeys = keys(obj);
+
   sourceKeys.forEach((key) => {
     const prefixedKey = `${cleanPrefix}${key}`;
-    const keyValue = sourceObj[key];
-    if (ObjectUtils.isObject(keyValue)) {
-      ObjectUtils.flattenObjectOntoAnother(keyValue, cleanTarget, `${prefixedKey}.`);
+    const keyValue = obj[key];
+    if (isObject(keyValue)) {
+      flattenObjectOntoAnother(keyValue, cleanTarget, `${prefixedKey}.`);
     } else {
       cleanTarget[prefixedKey] = keyValue;
     }
@@ -785,7 +787,7 @@ ObjectUtils.flattenObjectOntoAnother = function flattenObjectOntoAnother(sourceO
 };
 
 /**
- * Flattens an object and sub-objects into dot notation - to have easier time understanding schemas and explainations.
+ * Flattens an object and sub-objects into dot notation - to have easier time understanding schemas and explanations.
  * 
  * example:
  * 
@@ -806,11 +808,11 @@ ObjectUtils.flattenObjectOntoAnother = function flattenObjectOntoAnother(sourceO
  * ```
  * @param {Object} targetObj - Object with all properties and sub-objects to flatten.
  * @returns {Object} - New object with dot notation properties
- * @see {@link module:object.expand|expand()} - as the inverse
- * @see {@link module:describe.describeObjects|describeObjects(collection, options)} - as a way to describe the values provided
+ * @see {@link expand} - as the inverse
+ * @see describe.describeObjects(collection, options) - as a way to describe the values provided
  */
-ObjectUtils.flatten = function flatten(targetObj) {
-  return ObjectUtils.flattenObjectOntoAnother(targetObj);
+export function flatten(targetObj: unknown): Record<string, unknown> | unknown {
+  return flattenObjectOntoAnother(targetObj);
 };
 
 /**
@@ -837,15 +839,15 @@ ObjectUtils.flatten = function flatten(targetObj) {
  * 
  * @param {Object} targetObj - a flattened object (with dot notation properties) to be expanded
  * @returns {Object} - a new object with sub-objects for each of the dot-notation entries
- * @see {@link module:object.flatten|flatten()} - as the inverse
+ * @see {@link flatten} - as the inverse
  */
-ObjectUtils.expand = function expand(targetObj) {
-  if (!ObjectUtils.isObject(targetObj)) return targetObj;
+export function expand(targetObj: unknown): Record<string, unknown> | unknown {
+  if (!isObject(targetObj)) return targetObj;
 
   const result = {};
-  const keys = ObjectUtils.keys(targetObj);
-  keys.forEach((key) => {
-    ObjectUtils.applyPropertyValue(result, key, targetObj[key]);
+  const keyList = keys(targetObj);
+  keyList.forEach((key) => {
+applyPropertyValue(result, key, targetObj[key]);
   });
 
   return result;
@@ -857,28 +859,28 @@ ObjectUtils.expand = function expand(targetObj) {
  * @param {String[]} propertyNames - list of the only properties to keep
  * @returns {Object[]}
  */
-ObjectUtils.selectObjectProperties = function selectObjectProperties(list, ...propertyNames) {
-  const cleanPropertyNames = propertyNames.length > 0 && Array.isArray(propertyNames[0])
+export function selectObjectProperties(list: Record<string, unknown> | Record<string, unknown>[] | null, ...propertyNames: (string | string[])[]): Record<string, unknown>[] {
+  const propList = (propertyNames.length > 0 && Array.isArray(propertyNames[0])
     ? propertyNames[0]
-    : propertyNames;
+    : propertyNames) as string[];
 
   if (!list) return [];
   const targetList = Array.isArray(list) ? list : [list];
 
   return targetList.map(
-    (record) => cleanPropertyNames.reduce(
-      (result, prop) => ObjectUtils.objAssignIP(result, prop, record[prop]), {}
+    (record) => propList.reduce(
+      (result, prop) => objAssignIP(result, prop, record[prop]), {}
     )
   );
 };
 
 /**
  * Removes specific properties on an object or list of objects
- * @param {Object | Object[]} list - collection of objects to filter
- * @param {String[]} propertyNames - list of the only properties to keep
- * @returns {Object[]}
+ * @param list - collection of objects to filter
+ * @param propertyNames - list of properties to remove
+ * @returns filtered objects
  */
-ObjectUtils.filterObjectProperties = function filterObjectProperties(list, propertyNames) {
+export function filterObjectProperties(list: Record<string, unknown> | Record<string, unknown>[] | null, propertyNames: string[]): Record<string, unknown>[] {
   if (!list) return [];
   const targetList = Array.isArray(list) ? list : [list];
   return targetList.map((obj) => {
@@ -927,20 +929,20 @@ ObjectUtils.filterObjectProperties = function filterObjectProperties(list, prope
  * @param {Object|Object[]} objectList - list of objects to extract the property from
  * @param {Function | String} propertyOrFn - Name of the property or accessor function
  * @returns {Array} - single array the values stored in propertyOrFn across all objects in objectList.
- * @see {@link module:aggregate.unique|unique()} to see all the unique values stored
- * @see {@link module:object.extractObjectProperties|object.extractObjectProperties} - to extract into array vectors 
- * @see {@link module:object.fetchObjectProperty|object.fetchObjectProperty} - to extract a deep value and optionally throw if not found
- * @see {@link module:object.applyPropertyValue|object.applyPropertyValue} - to apply a single value to a single object using dot notation safely
+ * @see aggregate.unique() - to see all the unique values stored
+ * @see {@link extractObjectProperties} - to extract into array vectors
+ * @see {@link fetchObjectProperty} - to extract a deep value and optionally throw if not found
+ * @see {@link applyPropertyValue} - to apply a single value to a single object using dot notation safely
  */
-ObjectUtils.extractObjectProperty = function extractObjectProperty(list, propertyOrFn) {
-  let cleanList = !list ? [] : Array.isArray(list) ? list : [list];
-  cleanList = cleanList.filter((r) => r);
-  const fn = ObjectUtils.evaluateFunctionOrProperty(propertyOrFn);
-  return cleanList.map(fn);
+export function extractObjectProperty(list: (Record<string, unknown> | null)[] | Record<string, unknown> | null, propertyOrFn?: PropertyOrFn): unknown[] {
+  const cleanList = !list ? [] : Array.isArray(list) ? list : [list];
+  const filteredList = cleanList.filter((r): r is Record<string, unknown> => r != null);
+  const fn = evaluateFunctionOrProperty(propertyOrFn);
+  return filteredList.map(fn);
 };
 
 /**
- * Similar to {@link module:object:extractObjectProperty|object.extractObjectProperty} -
+ * Similar to {@link extractObjectProperty} -
  * this extracts out multiple property/vectors at a time.
  * 
  * Note that unlike numpy, there is a key preserved in the result - to better
@@ -961,7 +963,7 @@ ObjectUtils.extractObjectProperty = function extractObjectProperty(list, propert
  * // }
  * ```
  * 
- * Keys will be the the dot notation of the path used `ex: prop[index].value`
+ * Keys will be the dot notation of the path used `ex: prop[index].value`
  * or can be explicitly set through a `[key, accessor]` pair
  * 
  * ```
@@ -1016,11 +1018,11 @@ ObjectUtils.extractObjectProperty = function extractObjectProperty(list, propert
  * @param {Object|Object[]} objectList - list of objects to extract the property from
  * @param {Map<Function | String>} propertyOrFnMap - Name of the property or accessor function
  * @returns {Object} - Object with the keys in the map as properties - extracting the values across all in list.
- * @see {@link module:object.extractObjectProperty|extractObjectProperty(list, propertyNameOrFn)} to see all the values stored for a single property.
- * @see {@link module:object.applyPropertyValues|object.applyPropertyValues} - to safely and deeply apply the list of values extracted to a list of objects.
- * @see {@link module:object.fetchObjectProperties} - to fetch multiple properties at once into objects
+ * @see {@link extractObjectProperty} - to see all the values stored for a single property.
+ * @see {@link applyPropertyValues} - to safely and deeply apply the list of values extracted to a list of objects.
+ * @see {@link fetchObjectProperties} - to fetch multiple properties at once into objects
  */
-ObjectUtils.extractObjectProperties = function extractObjectProperties(list: unknown, propertyOrFnMap: unknown) {
+export function extractObjectProperties(list: unknown, propertyOrFnMap: unknown): Record<string, unknown[]> | unknown[] {
   let propertyEntries: [string, PropertyOrFn | string][] = [];
   const signature = 'object.extractObjectProperties(list:Object[], propertyOrFnMap:Map<String, stringOrFn>)';
 
@@ -1043,9 +1045,9 @@ ObjectUtils.extractObjectProperties = function extractObjectProperties(list: unk
     throw Error(`${signature}: propertyOrFnMap must be a map of propertyName keys, with a function or property name as the value`);
   }
 
-  const results: Record<string, unknown> = {};
+  const results: Record<string, unknown[]> = {};
   propertyEntries.forEach(([propertyName, propertyOrFn]) => {
-    results[propertyName] = ObjectUtils.extractObjectProperty(list, propertyOrFn || propertyName);
+    results[propertyName] = extractObjectProperty(list as Record<string, unknown>[], propertyOrFn || propertyName);
   });
 
   return results;
@@ -1074,14 +1076,13 @@ ObjectUtils.extractObjectProperties = function extractObjectProperties(list: unk
  * @param {Object<String,any>} propertyNames - Object with the keys as as properties to return,
  *    and the values using dot notation to access related records and properties
  *    (ex: {parentName: 'somePropertyObject.parent.parent.name', childName: 'child.Name'})
- * @param {FetchObjectOptions} options - {@link module:object~FetchObjectOptions|See FetchObjectOptions} 
- * @returns {Object[]} - objects with the properties resolved
- *    (ex: {parentname, childName, etc.})
- * @see {@link module:object.fetchObjectProperty|object.fetchObjectProperty} - to safely fetch  a single value
- * @see {@link module:object.applyPropertyValues|object.applyPropertyValues} - to safely and deeply apply the list of values extracted to a list of objects.
- * @see {@link module:object.extractObjectProperties|object.extractObjectProperties} - to extract into array vectors instead of objects
+ * @param options - See FetchObjectOptions
+ * @returns objects with the properties resolved (ex: {parentname, childName, etc.})
+ * @see {@link fetchObjectProperty} - to safely fetch a single value
+ * @see {@link applyPropertyValues} - to safely and deeply apply the list of values extracted to a list of objects.
+ * @see {@link extractObjectProperties} - to extract into array vectors instead of objects
  */
-ObjectUtils.fetchObjectProperties = function fetchObjectProperties(list: unknown, propertyNames: Record<string, string>, options: FetchObjectOptions = {}) {
+export function fetchObjectProperties(list: unknown, propertyNames: Record<string, string>, options: FetchObjectOptions = {}): Record<string, unknown>[] {
   if (!list) return [];
   const targetList = Array.isArray(list) ? list : [list];
   
@@ -1095,7 +1096,7 @@ ObjectUtils.fetchObjectProperties = function fetchObjectProperties(list: unknown
   return targetList.map((obj) => {
     const result = append ? { ...obj } : {};
     props.forEach((prop) => {
-      result[prop] = ObjectUtils.fetchObjectProperty(obj, propertyNames[prop], options);
+      result[prop] = fetchObjectProperty(obj, propertyNames[prop], options);
     });
     return result;
   });
@@ -1136,13 +1137,13 @@ ObjectUtils.fetchObjectProperties = function fetchObjectProperties(list: unknown
  * @param {Object} obj - object to access the properties on
  * @param {String} propertyAccess - dot notation for the property to access
  *    (ex: `parent.obj.Name`)
- * @param {FetchObjectOptions} options - {@link module:object~FetchObjectOptions|See FetchObjectOptions}
- * @returns {any} - the value accessed at the end ofthe property chain
- * @see {@link module:object.fetchObjectProperties} - to fetch multiple properties at once into objects
- * @see {@link module:object.extractObjectProperty|object.extractObjectProperty} - to safely extract a deep value without options
- * @see {@link module:object.applyPropertyValue|object.applyPropertyValue} - to apply a single value to a single object using dot notation safely
+ * @param options - See FetchObjectOptions
+ * @returns the value accessed at the end of the property chain
+ * @see {@link fetchObjectProperties} - to fetch multiple properties at once into objects
+ * @see {@link extractObjectProperty} - to safely extract a deep value without options
+ * @see {@link applyPropertyValue} - to apply a single value to a single object using dot notation safely
  */
-ObjectUtils.fetchObjectProperty = function fetchObjectProperty(obj: unknown, propertyAccess: string, options: FetchObjectOptions = {}) {
+export function fetchObjectProperty(obj: unknown, propertyAccess: string, options: FetchObjectOptions = {}): unknown {
   if (!obj || !propertyAccess) return null;
   const {
     //-- whether to safely access even if object path cannot be found
@@ -1201,11 +1202,11 @@ ObjectUtils.fetchObjectProperty = function fetchObjectProperty(obj: unknown, pro
  * @param {string} path - dot notation path to set the value, ex: 'geo', or 'states[0].prop'
  * @param {any} value - value to set
  * @returns {Object} - the object the value was applied to
- * @see {@link module:object.applyPropertyValues|object.applyPropertyValues} - to safely and deeply apply the list of values extracted to a list of objects.
- * @see {@link module:object.extractObjectProperty|object.extractObjectProperty} - to safely extract a deep value
- * @see {@link module:object.fetchObjectProperty|object.fetchObjectProperty} - to extract a deep value and optionally throw if not found
+ * @see {@link applyPropertyValues} - to safely and deeply apply the list of values extracted to a list of objects.
+ * @see {@link extractObjectProperty} - to safely extract a deep value
+ * @see {@link fetchObjectProperty} - to extract a deep value and optionally throw if not found
  */
-ObjectUtils.applyPropertyValue = function applyPropertyValue(obj, path, value) {
+export function applyPropertyValue(obj: unknown, path: string, value: unknown): Record<string, unknown> | unknown {
   // const signature = 'applyPropertyValue(obj, path, value)';
 
   if (!obj) return obj;
@@ -1222,7 +1223,7 @@ ObjectUtils.applyPropertyValue = function applyPropertyValue(obj, path, value) {
   const terminalIndex = splitPath.length - 1;
 
   return splitPath
-    .reduce((currentVal, prop, currentIndex) => {
+    .reduce<Record<string, unknown>>((currentVal, prop, currentIndex) => {
       //-- can no longer occur
       // if (!prop) throw Error(`${signature}:Unable to set value with path:${path}`);
 
@@ -1235,15 +1236,15 @@ ObjectUtils.applyPropertyValue = function applyPropertyValue(obj, path, value) {
         // } else {
         //   currentVal[prop] = value;
         // }
-        return obj;
+        return obj as Record<string, unknown>;
       }
       //-- not a leaf
       if (!currentVal[prop]) {
         // eslint-disable-next-line no-param-reassign
         currentVal[prop] = {};
       }
-      return currentVal[prop];
-    }, obj);
+      return currentVal[prop] as Record<string, unknown>;
+    }, obj as Record<string, unknown>);
 };
 
 /**
@@ -1283,11 +1284,11 @@ ObjectUtils.applyPropertyValue = function applyPropertyValue(obj, path, value) {
  * @param {string} path - dot notation path to set the value, ex: 'geo', or 'states[0].prop'
  * @param {any} value - the value that should be set at that path.
  * @returns {Object}
- * @see {@link module:object.applyPropertyValue} - to apply a single value to a single object
- * @see {@link module:object.fetchObjectProperties} - to fetch multiple properties at once into objects
- * @see {@link module:object.extractObjectProperties|object.extractObjectProperties} - to extract properties into array vectors instead of objects
+ * @see {@link applyPropertyValue} - to apply a single value to a single object
+ * @see {@link fetchObjectProperties} - to fetch multiple properties at once into objects
+ * @see {@link extractObjectProperties} - to extract properties into array vectors instead of objects
  */
-ObjectUtils.applyPropertyValues = function applyPropertyValues(objectList, path, valueList) {
+export function applyPropertyValues(objectList: Record<string, unknown> | Record<string, unknown>[] | null, path: string, valueList: unknown): Record<string, unknown> | Record<string, unknown>[] | null {
   // const signature = 'applyPropertyValues(objectList, path, valueList)';
   if (!objectList || !path) {
     //-- do nothing
@@ -1305,7 +1306,7 @@ ObjectUtils.applyPropertyValues = function applyPropertyValues(objectList, path,
   for (let i = 0; i < minLength; i += 1) {
     const obj = cleanObjectList[i];
     const val = cleanValueList[i];
-    ObjectUtils.applyPropertyValue(obj, path, val);
+applyPropertyValue(obj, path, val);
   }
 
   return objectList;
@@ -1368,10 +1369,10 @@ ObjectUtils.applyPropertyValues = function applyPropertyValues(objectList, path,
  * @param {Object} propertyTranslations - An object with property names as the properties to update <br />
  *      and the values as a function ((any) => any) accepting the current value, returning the new value.
  * @returns {Object[]} - collection of objects transformed
- * @see {@link module:object.augment|augment(collection, fn)} - to add in new properties
+ * @see {@link augment} - to add in new properties
  * @see {@link TableGenerator#formatter} - for other examples
  */
-ObjectUtils.formatProperties = function formatProperties(collection, propertyTranslations) {
+export function formatProperties(collection: Record<string, unknown> | Record<string, unknown>[] | null, propertyTranslations: Record<string, unknown>): Record<string, unknown>[] {
   const cleanCollection = !collection ? []
     : Array.isArray(collection) ? collection : [collection];
   
@@ -1381,7 +1382,7 @@ ObjectUtils.formatProperties = function formatProperties(collection, propertyTra
   return cleanCollection.map((obj) => {
     const clone = { ...obj };
     translationKeys.forEach((key) => {
-      clone[key] = propertyTranslations[key](clone[key]);
+      clone[key] = (propertyTranslations[key] as (v: unknown) => unknown)(clone[key]);
     });
     return clone;
   });
@@ -1393,7 +1394,7 @@ ObjectUtils.formatProperties = function formatProperties(collection, propertyTra
  * @param {Object | Object[]} list - collection of objects to check
  * @returns {Map<String, Set<String>>} - collection of the types and the fields of those types
  */
-ObjectUtils.getObjectPropertyTypes = function getObjectPropertyTypes(list) {
+export function getObjectPropertyTypes(list: (Record<string, unknown> | null)[] | Record<string, unknown> | null): Map<string, Set<string>> {
   const targetList = !list ? [] : Array.isArray(list) ? list : [list];
   const results = new Map();
   let type;
@@ -1422,7 +1423,7 @@ ObjectUtils.getObjectPropertyTypes = function getObjectPropertyTypes(list) {
  * @param {any} targetObj - object or array of objects
  * @returns {Object} - JSON Schema
  */
-ObjectUtils.generateSchema = function generateSchema(targetObj) {
+export function generateSchema(targetObj: Record<string, unknown>[]): unknown {
   return schemaGenerator.json(targetObj);
 };
 
@@ -1502,16 +1503,16 @@ ObjectUtils.generateSchema = function generateSchema(targetObj) {
  * @param {Function} joinFn - function to call each time an objectArray object, has an indexField found in targetMap <br />
  *      Signature: `(sourceObj:Object, mappedObject:Object) => {Object}`
  * @returns {Array<Object>} - Array of results returned from `joinFn`
- * @see {@link module:object.mapByProperty|object.mapByProperty}
+ * @see {@link mapByProperty}
  */
-ObjectUtils.join = function join(objectArray, indexField, targetMap, joinFn) {
+export function join(objectArray: (Record<string, unknown> | null)[] | Record<string, unknown> | null, indexField: PropertyOrFn, targetMap: Map<unknown, unknown>, joinFn: (record: Record<string, unknown>, mapped: unknown) => Record<string, unknown>): (Record<string, unknown> | null)[] {
   const cleanArray = !objectArray
     ? []
     : Array.isArray(objectArray)
       ? objectArray
       : [objectArray];
 
-  const indexFn = ObjectUtils.evaluateFunctionOrProperty(indexField);
+  const indexFn = evaluateFunctionOrProperty(indexField);
 
   if (!targetMap) {
     throw Error('object.join(objectArray, indexField, targetMap, joinFn): targetMap cannot be null');
@@ -1573,7 +1574,7 @@ ObjectUtils.join = function join(objectArray, indexField, targetMap, joinFn) {
  * @param {...String} fields - List of fields to add to the objectArray in-place against values from targetMap
  * @returns {Array<Object>} - The modified objectArray with the fields applied.
  */
-ObjectUtils.joinProperties = function join(objectArray, indexField, targetMap, ...fields) {
+export function joinProperties(objectArray: (Record<string, unknown> | null)[] | Record<string, unknown> | null, indexField: PropertyOrFn, targetMap: Map<unknown, Record<string, unknown>>, ...fields: string[]): (Record<string, unknown> | null)[] {
   const cleanFields = fields.filter((f) => f);
   if (cleanFields.length < 1) {
     throw Error('object.joinProperties(objectArray, indexField, targetMap, ...fields): at least one property passed to join');
@@ -1591,7 +1592,7 @@ ObjectUtils.joinProperties = function join(objectArray, indexField, targetMap, .
     return result;
   };
 
-  return ObjectUtils.join(objectArray, indexField, targetMap, joinFn);
+  return join(objectArray, indexField, targetMap, joinFn);
 };
 
 /**
@@ -1618,12 +1619,12 @@ ObjectUtils.joinProperties = function join(objectArray, indexField, targetMap, .
  * @param {Function | String} propertyOrFn - Name of the property or Function to return a value
  * @returns {Array} - Array of values
  */
-ObjectUtils.propertyFromList = function propertyFromList(objectArray, propertyOrFn) {
+export function propertyFromList(objectArray: Record<string, unknown>[], propertyOrFn?: PropertyOrFn | null): unknown[] {
   const cleanArray = Array.isArray(objectArray)
     ? objectArray
     : [];
   
-  const fn = ObjectUtils.evaluateFunctionOrProperty(propertyOrFn);
+  const fn = evaluateFunctionOrProperty(propertyOrFn);
 
   return cleanArray.map(fn);
 };
@@ -1655,12 +1656,12 @@ ObjectUtils.propertyFromList = function propertyFromList(objectArray, propertyOr
  * @param {Object[]} objectsToCheck - the array of objects to check for the properties.
  * @param {...String} propertiesToFind - the list of properties to find within the collection.
  * @returns {Object[]} - Array of objects that are missing at least one of those properties
- * @see {@link module:file.findWithProperties|findWithProperties} - if you want objects that do not have all properties
+ * @see {@link findWithProperties} - if you want objects that have any of the properties
  **/
-ObjectUtils.findWithoutProperties = function findWithoutProperties(targetObj, ...propertiesToFind) {
-  const cleanProperties = propertiesToFind.length > 0 && Array.isArray(propertiesToFind[0])
+export function findWithoutProperties(targetObj: Record<string, unknown> | Record<string, unknown>[], ...propertiesToFind: (string | string[])[]): Record<string, unknown>[] {
+  const cleanProperties = (propertiesToFind.length > 0 && Array.isArray(propertiesToFind[0])
     ? propertiesToFind[0]
-    : propertiesToFind;
+    : propertiesToFind) as string[];
   
   const cleanTargets = Array.isArray(targetObj)
     ? targetObj
@@ -1704,12 +1705,12 @@ ObjectUtils.findWithoutProperties = function findWithoutProperties(targetObj, ..
  * @param {Object[]} objectsToCheck - the array of objects to check for the properties.
  * @param {...String} propertiesToFind - the list of properties to find within the collection.
  * @returns {Object[]} - Array of objects that have at least one of those properties
- * @see {@link module:file.findWithoutProperties|findWithoutProperties} - if you want objects that do not have all properties
+ * @see {@link findWithoutProperties} - if you want objects that do not have all properties
  **/
-ObjectUtils.findWithProperties = function findWithProperties(targetObj, ...propertiesToFind) {
-  const cleanProperties = propertiesToFind.length > 0 && Array.isArray(propertiesToFind[0])
+export function findWithProperties(targetObj: Record<string, unknown> | Record<string, unknown>[], ...propertiesToFind: (string | string[])[]): Record<string, unknown>[] {
+  const cleanProperties = (propertiesToFind.length > 0 && Array.isArray(propertiesToFind[0])
     ? propertiesToFind[0]
-    : propertiesToFind;
+    : propertiesToFind) as string[];
 
   const cleanTargets = Array.isArray(targetObj)
     ? targetObj
@@ -1741,8 +1742,8 @@ ObjectUtils.findWithProperties = function findWithProperties(targetObj, ...prope
  *              but ONLY if the object does not have that property (ex: undefined)
  * @param {Object} defaultObj - Object with the properties and defaults applied
  * @param {any} defaultObj.property - the property to check, with the default value assigned
- * @see {@link module:file.findWithoutProperties|findWithoutProperties} - to determine if any objects do not have a set of properties
- * @see {@link module:file.keys|keys} - to get a list of unique properties of all objects in a list.
+ * @see {@link findWithoutProperties} - to determine if any objects do not have a set of properties
+ * @see {@link keys} - to get a list of unique properties of all objects in a list.
  * @example
  * const students = [
  *   { first: 'john', last: 'doe', birthday: '2002-04-01' },
@@ -1762,7 +1763,7 @@ ObjectUtils.findWithProperties = function findWithProperties(targetObj, ...prope
  * //   { first: 'jack', last: 'white', birthday: '', failure: 401 }
  * // ];
  */
-ObjectUtils.setPropertyDefaults = function setPropertyDefaults(targetObject, defaultObj) {
+export function setPropertyDefaults(targetObject: Record<string, unknown> | Record<string, unknown>[], defaultObj: Record<string, unknown>): Record<string, unknown>[] | Record<string, unknown> {
   const cleanTargets = Array.isArray(targetObject)
     ? targetObject
     : [targetObject];
@@ -1824,16 +1825,16 @@ ObjectUtils.setPropertyDefaults = function setPropertyDefaults(targetObject, def
  * @param  {...any} propertiesToFormat - list of properties to apply the formatting function
  * @returns {Object[]} - clone of objCollection with properties mapped
  */
-ObjectUtils.mapProperties = function mapProperties(objCollection, formattingFn, ...propertiesToFormat) {
+export function mapProperties(objCollection: Record<string, unknown> | Record<string, unknown>[], formattingFn: (val: unknown) => unknown, ...propertiesToFormat: (string | string[])[]): Record<string, unknown>[] {
   const cleanCollection = !Array.isArray(objCollection)
     ? [objCollection]
     : objCollection;
 
-  const cleanProperties = propertiesToFormat.length === 0
-    ? ObjectUtils.keys(objCollection)
+  const cleanProperties = (propertiesToFormat.length === 0
+    ? keys(objCollection)
     : propertiesToFormat.length > 0 && Array.isArray(propertiesToFormat[0])
       ? propertiesToFormat[0]
-      : propertiesToFormat;
+      : propertiesToFormat) as string[];
   
   if (typeof formattingFn !== 'function') {
     throw Error('object.mapProperties(collection, formattingFn, ...propertiesToFormat): formattingFn must be provided');
@@ -1873,7 +1874,7 @@ ObjectUtils.mapProperties = function mapProperties(objCollection, formattingFn, 
  * utils.object.propertyValueSample(collection);
  * // { first: 'jane', last: 'doe', age: 23 }
  */
-ObjectUtils.propertyValueSample = function propertyValueSample(objCollection) {
+export function propertyValueSample(objCollection: (Record<string, unknown> | null)[] | Record<string, unknown> | null): Map<string, unknown> {
   if (!objCollection) {
     throw new Error('propertyValueSample(objectCollection): objectCollection is required');
   }
@@ -1958,10 +1959,10 @@ ObjectUtils.propertyValueSample = function propertyValueSample(objCollection) {
  * @param {Object[]} source - the collection of objects to check and augment.
  * @param {Function} augmentFn - function accepting each entry, and returning the properties to "inherit" <br /> or a property with a value of undefined - if it should not be preserved.
  * @returns {Object[]} - new version of the source objects with the properties applied.
- * @see {@link module:object.propertyInherit|object.propertyInherit} - if you want to use values already on the object
- * @see {@link module:object.augment|augment()} - Applies properties to an object similar to Map
+ * @see {@link propertyInherit} - if you want to use values already on the object
+ * @see {@link augment} - Applies properties to an object similar to Map
  */
-ObjectUtils.augmentInherit = function augmentInherit(source, augmentFn) {
+export function augmentInherit(source: Record<string, unknown>[], augmentFn: (record: Record<string, unknown>, lastValue?: Record<string, unknown>) => Record<string, unknown> | null): Record<string, unknown>[] {
   const signature = 'augmentInherit(source, augmentFn)';
   if (!Array.isArray(source)) {
     throw new Error(`${signature}: source must be an array`);
@@ -1972,7 +1973,7 @@ ObjectUtils.augmentInherit = function augmentInherit(source, augmentFn) {
   let keys;
 
   let lastValue = {};
-  return source.map((entry, index) => {
+  return source.map((entry, _index) => {
     const fnResult = augmentFn(entry, lastValue);
 
     //-- ignore all values that are undefined
@@ -1982,7 +1983,7 @@ ObjectUtils.augmentInherit = function augmentInherit(source, augmentFn) {
     keys.forEach((key) => {
       if (isFlipped) {
         newValue[key] = undefined;
-      } else if (fnResult[key] !== undefined) {
+      } else if (fnResult != null && fnResult[key] !== undefined) {
         newValue[key] = fnResult[key];
         isFlipped = true;
       }
@@ -2025,9 +2026,9 @@ ObjectUtils.augmentInherit = function augmentInherit(source, augmentFn) {
  * @param {Object[]} source - Collection of objects to inherit values
  * @param  {...string} properties - properties that should use the previous value if the current value is undefined
  * @returns {Object[]} - collection of results
- * @see {@link module:object.augmentInherit|object.augmentInherit} - to create new properties to inherit
+ * @see {@link augmentInherit} - to create new properties to inherit
  */
-ObjectUtils.propertyInherit = function propertyInherit(source, ...properties) {
+export function propertyInherit(source: Record<string, unknown>[], ...properties: string[]): Record<string, unknown>[] {
   const signature = 'propertyInherit(source, ...properties)';
   if (!Array.isArray(source)) {
     throw new Error(`${signature}: source must be an array`);
@@ -2038,11 +2039,11 @@ ObjectUtils.propertyInherit = function propertyInherit(source, ...properties) {
   }
 
   const fn = (obj) => properties.reduce(
-    (result, propertyName) => ObjectUtils.objAssignIP(result, propertyName, obj[propertyName]),
+    (result, propertyName) => objAssignIP(result, propertyName, obj[propertyName]),
     {}
   );
 
-  return ObjectUtils.augmentInherit(source, fn);
+  return augmentInherit(source, fn);
 };
 
 /**
@@ -2083,10 +2084,10 @@ ObjectUtils.propertyInherit = function propertyInherit(source, ...properties) {
  * @param {Object[]|Object} source2 - object or array of objects to union
  * @returns {Object[]} - collection of objects merging the values between the two sources
  * 
- * @see {@link module:object.join|join} - to instead join based on a value instead of index
- * @see {@link module:object.filterObjectProperties|filterObjectProperties} - to remove properties from collection of objects.
+ * @see {@link join} - to instead join based on a value instead of index
+ * @see {@link filterObjectProperties} - to remove properties from collection of objects.
  */
-ObjectUtils.union = function union(source1, source2) {
+export function union(source1: Record<string, unknown> | Record<string, unknown>[], source2: Record<string, unknown> | Record<string, unknown>[]): Record<string, unknown>[] {
   const signature = 'union(source1:object[], source2:object[])';
   
   let s1Iterator;
@@ -2174,12 +2175,12 @@ ObjectUtils.union = function union(source1, source2) {
  * @param {Array<Array>} arrayCollection - 2d collection of values
  * @param {String[]} [headers] - Optional set of headers to use if not present in first row 0
  * @returns {Object[]} - list of objects
- * @see {@link module:object.objectCollectionFromArray|objectCollectionFromArray}
- * @see {@link module:object.objectCollectionToArray|objectCollectionToArray}
- * @see {@link module:object.objectCollectionFromDataFrameObject|objectCollectionFromDataFrameObject}
- * @see {@link module:object.objectCollectionToDataFrameObject|objectCollectionToDataFrameObject}
+ * @see {@link objectCollectionFromArray}
+ * @see {@link objectCollectionToArray}
+ * @see {@link objectCollectionFromDataFrameObject}
+ * @see {@link objectCollectionToDataFrameObject}
  */
-ObjectUtils.objectCollectionFromArray = function objectCollectionFromArray(arrayCollection, headers = null) {
+export function objectCollectionFromArray(arrayCollection: unknown[][], headers: string[] | null = null): Record<string, unknown>[] {
   let cleanHeaders;
   let cleanValues;
   
@@ -2197,7 +2198,7 @@ ObjectUtils.objectCollectionFromArray = function objectCollectionFromArray(array
   /* eslint-disable arrow-body-style */
   const newData = cleanValues.map((row) => {
     return cleanHeaders.reduce((result, header, index) => {
-      return ObjectUtils.assignIP(result, header, row[index]);
+      return assignIP(result, header, row[index]);
     }, {});
   });
   /* eslint-enable arrow-body-style */
@@ -2228,29 +2229,29 @@ ObjectUtils.objectCollectionFromArray = function objectCollectionFromArray(array
  * @param {Array<Array>} arrayCollection - 2d collection of values
  * @param {String[]?} headers - Optional set of headers to use if not present in first row 0
  * @returns {Object[]} - list of objects
- * @see {@link module:object.objectCollectionFromArray|objectCollectionFromArray}
- * @see {@link module:object.objectCollectionToArray|objectCollectionToArray}
- * @see {@link module:object.objectCollectionFromDataFrameObject|objectCollectionFromDataFrameObject}
- * @see {@link module:object.objectCollectionToDataFrameObject|objectCollectionToDataFrameObject}
+ * @see {@link objectCollectionFromArray}
+ * @see {@link objectCollectionToArray}
+ * @see {@link objectCollectionFromDataFrameObject}
+ * @see {@link objectCollectionToDataFrameObject}
  */
-ObjectUtils.objectCollectionToArray = function objectCollectionToArray(objectCollection) {
+export function objectCollectionToArray(objectCollection: Record<string, unknown>[]): unknown[][] {
   if (!Array.isArray(objectCollection)) throw Error('objectCollectionToArray: expected collection to be a collection of objects');
 
   //-- create the result array in advance for performance 
   // https://stackoverflow.com/questions/35578478/array-prototype-fill-with-object-passes-reference-and-not-new-instance
 
-  const keys = ObjectUtils.keys(objectCollection);
+  const keyList = keys(objectCollection);
 
   const finalResult = new Array(objectCollection.length + 1);
-  finalResult[0] = keys;
+  finalResult[0] = keyList;
 
   for (let i = 1; i <= objectCollection.length; i += 1) {
-    finalResult[i] = new Array(keys.length);
+    finalResult[i] = new Array(keyList.length);
   }
 
   objectCollection.forEach((obj, objIndex) => {
     const rowResult = finalResult[objIndex + 1];
-    keys.forEach((key, keyIndex) => {
+    keyList.forEach((key, keyIndex) => {
       rowResult[keyIndex] = obj[key];
     });
   });
@@ -2281,17 +2282,19 @@ ObjectUtils.objectCollectionToArray = function objectCollectionToArray(objectCol
  * 
  * @param {Object} dataFrameObject - Object with properties holding 1d tensor arrays
  * @returns {Object[]} - collection of objects
- * @see {@link module:object.objectCollectionFromArray|objectCollectionFromArray}
- * @see {@link module:object.objectCollectionToArray|objectCollectionToArray}
- * @see {@link module:object.objectCollectionFromDataFrameObject|objectCollectionFromDataFrameObject}
- * @see {@link module:object.objectCollectionToDataFrameObject|objectCollectionToDataFrameObject}
+ * @see {@link objectCollectionFromArray}
+ * @see {@link objectCollectionToArray}
+ * @see {@link objectCollectionFromDataFrameObject}
+ * @see {@link objectCollectionToDataFrameObject}
  * @see {@link https://danfo.jsdata.org/api-reference/dataframe/creating-a-dataframe#creating-a-dataframe-from-an-object|Danfo DataFrame Objects}
  */
-ObjectUtils.objectCollectionFromDataFrameObject = function objectCollectionFromDataFrameObject(dataFrameObject) {
+export function objectCollectionFromDataFrameObject(
+  dataFrameObject: Record<string, unknown[]>
+): Record<string, unknown>[] {
   if (!dataFrameObject) return [];
   if ((typeof dataFrameObject) !== 'object') throw Error('objectCollectionFromDataFrameObject must be passed an object with properties holding 1d tensors');
 
-  const fields = ObjectUtils.keys(dataFrameObject);
+  const fields = keys(dataFrameObject);
 
   if (fields.length < 1) return [];
 
@@ -2342,16 +2345,16 @@ ObjectUtils.objectCollectionFromDataFrameObject = function objectCollectionFromD
  * 
  * @param {Object} dataFrameObject - Object with properties holding 1d tensor arrays
  * @returns {Object[]} - collection of objects
- * @see {@link module:object.objectCollectionFromArray|objectCollectionFromArray}
- * @see {@link module:object.objectCollectionToArray|objectCollectionToArray}
- * @see {@link module:object.objectCollectionFromDataFrameObject|objectCollectionFromDataFrameObject}
- * @see {@link module:object.objectCollectionToDataFrameObject|objectCollectionToDataFrameObject}
+ * @see {@link objectCollectionFromArray}
+ * @see {@link objectCollectionToArray}
+ * @see {@link objectCollectionFromDataFrameObject}
+ * @see {@link objectCollectionToDataFrameObject}
  * @see {@link https://danfo.jsdata.org/api-reference/dataframe/creating-a-dataframe#creating-a-dataframe-from-an-object|Danfo DataFrame Objects}
  */
-ObjectUtils.objectCollectionToDataFrameObject = function objectCollectionToDataFrameObject(objectCollection, fields = null) {
+export function objectCollectionToDataFrameObject(objectCollection: Record<string, unknown>[], fields: string[] | null = null): Record<string, unknown[]> {
   const dataFrameObject = {};
 
-  const cleanFields = fields || ObjectUtils.keys(objectCollection);
+  const cleanFields = fields || keys(objectCollection);
   const length = objectCollection?.length || 0;
 
   cleanFields.forEach((field) => {
@@ -2425,14 +2428,14 @@ ObjectUtils.objectCollectionToDataFrameObject = function objectCollectionToDataF
  * @returns {Object} - list of objects x keysForEachSeries.length, where field within keysForEachSeries
  *    are then individually assigned to a value, and series - to indicate which field is used.
  */
-ObjectUtils.splitIntoDatums = function splitIntoDatums(
-  collection,
-  keysToSplit,
+export function splitIntoDatums(
+  collection: Record<string, unknown>[],
+  keysToSplit: string[],
   seriesFieldName = 'series',
   valueFieldName = 'value'
-) {
-  const keysToKeep = ObjectUtils.keysNotInList(collection, keysToSplit);
-  const keysToSeparate = ObjectUtils.keysWithinList(collection, keysToSplit);
+): Record<string, unknown>[] {
+  const keysToKeep = keysNotInList(collection, keysToSplit);
+  const keysToSeparate = keysWithinList(collection, keysToSplit);
   const rowLength = keysToSeparate.length;
 
   const results = new Array(collection.length * rowLength).fill(null);
@@ -2454,4 +2457,3 @@ ObjectUtils.splitIntoDatums = function splitIntoDatums(
   return results;
 };
 
-export default ObjectUtils;

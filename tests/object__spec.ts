@@ -1,6 +1,6 @@
-import { describe, it, afterEach, beforeEach } from "@std/testing/bdd";
+import { describe, it } from "@std/testing/bdd"; // afterEach, beforeEach
 import { expect } from "@std/expect";
-import ObjectUtils from "../src/object.ts";
+import * as ObjectUtils from "../src/object.ts";
 import { assertSpyCall, assertSpyCalls, spy } from "@std/testing/mock";
 
 /** Minimal spy for joinFn - records calls for tests that asserted on jest.fn() */
@@ -30,7 +30,7 @@ describe('ObjectUtils', () => {
     it('returns the specific value if null is sent', () => {
       const source = 23;
       const expected = 23;
-      const results = ObjectUtils.evaluateFunctionOrProperty(null)(source);
+      const results = ObjectUtils.evaluateFunctionOrProperty(null)(source as any);
       expect(results).toBe(expected);
     });
     it('returns a property if a string is passed', () => {
@@ -42,11 +42,11 @@ describe('ObjectUtils', () => {
     it('returns a mapped value if the function is passed',  () => {
       const source = { age: 23 };
       const expected = 23 * 2;
-      const results = ObjectUtils.evaluateFunctionOrProperty((r) => r.age * 2)(source);
+      const results = ObjectUtils.evaluateFunctionOrProperty((r) => (r.age as number) * 2)(source);
       expect(results).toBe(expected);
     });
     it('throws an error if an unexpected type is passed',  () => {
-      expect(() => ObjectUtils.evaluateFunctionOrProperty(new Date()))
+      expect(() => ObjectUtils.evaluateFunctionOrProperty(new Date() as any))
         .toThrow();
     });
   });
@@ -90,7 +90,7 @@ describe('ObjectUtils', () => {
       const expected = 'Expecting at least one property name to be passed';
 
       expect(() => {
-        ObjectUtils.objAssignIP(data, propName, propValue);
+        ObjectUtils.objAssignIP(data, propName as any, propValue);
       }).toThrow(expected);
     });
   });
@@ -111,38 +111,38 @@ describe('ObjectUtils', () => {
       expect(found).toEqual(expected);
     });
     it('throws an error if a property is not passed', () => {
-      expect(() => ObjectUtils.objAssign(null)).toThrow();
+      expect(() => (ObjectUtils.objAssign as any)(null)).toThrow();
     });
     it('throws an error if a property is not a string', () => {
-      expect(() => ObjectUtils.objAssign(null, 1, 'doe')).toThrow();
+      expect(() => (ObjectUtils.objAssign as any)(null, 1, 'doe')).toThrow();
     });
   });
   describe('objAssignEntities', () => {
     it('can assign at least one entity', () => {
       const entities = [['first', 'john']];
       const expected = { first: 'john' };
-      const result = ObjectUtils.objAssignEntities(null, entities);
+      const result = ObjectUtils.objAssignEntities(null, entities as any);
       expect(result).toEqual(expected);
     });
     it('can assign multiple entities', () => {
       const entities = [['first', 'john'], ['last', 'doe']];
       const expected = { first: 'john', last: 'doe' };
-      const result = ObjectUtils.objAssignEntities(null, entities);
+      const result = ObjectUtils.objAssignEntities(null, entities as any);
       expect(result).toEqual(expected);
     });
     it('appends to an existing object', () => {
       const entities = [['first', 'john']];
       const expected = { first: 'john', last: 'doe' };
-      const result = ObjectUtils.objAssignEntities({ last: 'doe' }, entities);
+      const result = ObjectUtils.objAssignEntities({ last: 'doe' }, entities as any);
       expect(result).toEqual(expected);
     });
     it('fails if entities are not an array', () => {
       try {
         // not sure why this isn't catching the error
         //expect(ObjectUtils.objAssignEntities(null, {})).toThrow();
-        ObjectUtils.objAssignEntities(null, {});
+        (ObjectUtils.objAssignEntities as any)(null, {});
         throw new Error('exception should be thrown if entities are not an array');
-      } catch (err) {
+      } catch (_err) {
         //
       }
     });
@@ -150,9 +150,9 @@ describe('ObjectUtils', () => {
       try {
         // not sure why this isn't catching the error
         // expect(ObjectUtils.objAssignEntities(null, [])).toThrow();
-        ObjectUtils.objAssignEntities(null, []);
+        (ObjectUtils.objAssignEntities as any)(null, []);
         throw new Error('exception should be thrown if entities are not an array');
-      } catch (err) {
+      } catch (_err) {
         //
       }
     });
@@ -183,7 +183,7 @@ describe('ObjectUtils', () => {
           { source: 'A', value: 6, origin: 's_A' }, { source: 'B', value: 13, origin: 's_B' },
           { source: 'A', value: 5, origin: 's_A' }, { source: 'B', value: 12, origin: 's_B' }
         ];
-        const results = ObjectUtils.augment(data, augmentFn, false);
+        const results = ObjectUtils.augment(data, augmentFn as any, false);
         expect((data[0] as Record<string, unknown>).origin).toBeUndefined();
         expect(expected[0].origin).toBe('s_A');
         expect(results).toEqual(expected);
@@ -231,7 +231,7 @@ describe('ObjectUtils', () => {
           { source: 'A', value: 6, origin: 's_A' }, { source: 'B', value: 13, origin: 's_B' },
           { source: 'A', value: 5, origin: 's_A' }, { source: 'B', value: 12, origin: 's_B' }
         ];
-        const results = ObjectUtils.augment(data, augmentFn, true);
+        const results = ObjectUtils.augment(data, augmentFn as any, true);
         expect((data[0] as Record<string, unknown>).origin).toBe('s_A');
         expect(expected[0].origin).toBe('s_A');
         expect(results).toEqual(expected);
@@ -578,7 +578,7 @@ describe('ObjectUtils', () => {
     it('returns an empty object if renaming a null object', () => {
       //-- don't put the result in the spec
       // const expected = {};
-      const result = ObjectUtils.renameProperties([null], { first: 'first_name' });
+      const result = ObjectUtils.renameProperties([null] as any, { first: 'first_name' });
       expect(result).toBeTruthy();
       expect(typeof result).toBe('object');
     });
@@ -598,7 +598,7 @@ describe('ObjectUtils', () => {
       // const expected = {};
       const originalKeys = ['first'];
       const newKeys = ['first_name'];
-      const result = ObjectUtils.renamePropertiesFromList(null, originalKeys, newKeys);
+      const result = ObjectUtils.renamePropertiesFromList(null as any, originalKeys, newKeys);
       expect(result).toBeTruthy();
       expect(typeof result).toBe('object');
     });
@@ -607,7 +607,7 @@ describe('ObjectUtils', () => {
       // const expected = {};
       const originalKeys = ['first'];
       const newKeys = ['first_name'];
-      const result = ObjectUtils.renamePropertiesFromList([null], originalKeys, newKeys);
+      const result = ObjectUtils.renamePropertiesFromList([null] as any, originalKeys, newKeys);
       expect(result).toBeTruthy();
       expect(typeof result).toBe('object');
     });
@@ -929,7 +929,7 @@ describe('ObjectUtils', () => {
         createRecord(4, 'd'),
         createRecord(5, 'e')
       ];
-      const result = ObjectUtils.generateSchema(targetObj);
+      const result = ObjectUtils.generateSchema(targetObj) as { items?: unknown };
       const expected = { type: 'object', properties: { a: { type: 'number' }, b: { type: 'string' } }, required: ['a', 'b'] };
       // console.log(JSON.stringify(result.items));
       expect(result.items).toStrictEqual(expected);
@@ -959,7 +959,7 @@ describe('ObjectUtils', () => {
       ObjectUtils.mapByProperty([], 'field');
     });
     it('throws an error if no property is requested', () => {
-      expect(() => ObjectUtils.mapByProperty([]))
+      expect(() => (ObjectUtils.mapByProperty as any)([]))
         .toThrow('object.mapByProperty: expects a propertyName');
     });
     it('returns an empty map if the object to be mapped is null', () => {
@@ -1050,7 +1050,7 @@ describe('ObjectUtils', () => {
       expect(result).toEqual(expected);
     });
     it('returns an empty array if requesting an null list of properties', () => {
-      const result = ObjectUtils.selectObjectProperties(null, null);
+      const result = ObjectUtils.selectObjectProperties(null, null as any);
       const expected = [];
       expect(result).toEqual(expected);
     });
@@ -1441,7 +1441,7 @@ describe('ObjectUtils', () => {
             id: 'econ-101'
           }
         };
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
       it('on a child object', () => {
@@ -1462,7 +1462,7 @@ describe('ObjectUtils', () => {
             name: 'Economy of Thought'
           }
         };
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
       it('on a non-existant child object', () => {
@@ -1479,7 +1479,7 @@ describe('ObjectUtils', () => {
             name: 'Economy of Thought'
           }
         };
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
       it('on a non-existant child object multi-level', () => {
@@ -1498,7 +1498,7 @@ describe('ObjectUtils', () => {
             }
           }
         };
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
       it('on a multi-dimensional array', () => {
@@ -1519,7 +1519,7 @@ describe('ObjectUtils', () => {
             name: 'Economy of Thought'
           }]
         }];
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
       it('an invalid path: hanging dot .', () => {
@@ -1538,7 +1538,7 @@ describe('ObjectUtils', () => {
           age: 24,
           class: 'blue'
         };
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
     });
@@ -1548,7 +1548,7 @@ describe('ObjectUtils', () => {
         const path = 'favoriteColor';
         const value = 'blue';
         const expected = null;
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
     });
@@ -1569,7 +1569,7 @@ describe('ObjectUtils', () => {
           id: 'econ-101'
         }
       };
-      const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+      const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
       expect(result).toStrictEqual(expected);
     });
   });
@@ -1689,7 +1689,7 @@ describe('ObjectUtils', () => {
           age: 24,
           class: 'blue'
         };
-        const result = ObjectUtils.applyPropertyValue(targetObj, path, value);
+        const result = ObjectUtils.applyPropertyValue(targetObj, path as any, value);
         expect(result).toStrictEqual(expected);
       });
       it('if targetObjects are null', () => {
@@ -1874,7 +1874,7 @@ describe('ObjectUtils', () => {
         { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62 }
       ];
 
-      const results = ObjectUtils.join(weather, 'city', cityLocations, ((w, c) => ({ ...w, ...c })));
+      const results = ObjectUtils.join(weather, 'city', cityLocations, ((w, c) => ({ ...w, ...(c ?? {}) })));
       const expected = [
         { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, locationId: 3, lat: 47.6062, lon: 122.3321 },
         null,
@@ -1894,7 +1894,7 @@ describe('ObjectUtils', () => {
         { id: 7, city: 'San Francisco',  month: 'Apr', precip: 5.20 }
       ];
 
-      const results = ObjectUtils.join(weather, 'city', cityLocations, ((w, c) => ({ ...w, ...c })));
+      const results = ObjectUtils.join(weather, 'city', cityLocations, ((w, c) => ({ ...w, ...(c ?? {}) })));
       const expected = [
         { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, locationId: 3, lat: 47.6062, lon: 122.3321 },
         null,
@@ -1915,7 +1915,7 @@ describe('ObjectUtils', () => {
 
       const errorMsg = 'object.join(objectArray, indexField, targetMap, joinFn): joinFn is required';
 
-      expect(() => ObjectUtils.join(targetObj, indexField, targetMap, null)).toThrow(errorMsg);
+      expect(() => ObjectUtils.join(targetObj, indexField, targetMap, null as any)).toThrow(errorMsg);
     });
     it('must have a targetMap', () => {
       const targetObj = { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87 };
@@ -1925,7 +1925,7 @@ describe('ObjectUtils', () => {
 
       const errorMsg = 'object.join(objectArray, indexField, targetMap, joinFn): targetMap cannot be null';
 
-      expect(() => ObjectUtils.join(targetObj, indexField, targetMap, joinFn)).toThrow(errorMsg);
+      expect(() => ObjectUtils.join(targetObj, indexField, targetMap as any, joinFn as any)).toThrow(errorMsg);
     });
 
     it('can join on a null object', () => {
@@ -1935,7 +1935,7 @@ describe('ObjectUtils', () => {
 
       const joinFn = createJoinSpy((s: unknown, _t: unknown) => s);
 
-      const results = ObjectUtils.join(targetObj, indexField, targetMap, joinFn);
+      const results = ObjectUtils.join(targetObj, indexField, targetMap, joinFn as any);
       const expected = [];
 
       expect(joinFn.mock.calls.length).toBe(0);
@@ -1972,11 +1972,13 @@ describe('ObjectUtils', () => {
       const joinFn = spy((s: unknown, t: unknown) => ({ ...(s as Record<string, unknown>), locationId: (t as { locationId?: number })?.locationId }));
 
       const results = ObjectUtils.join(targetObj, indexField, targetMap, joinFn);
+      /*
       const expected = [
         { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, locationId: 3 },
         { id: 3, city: 'New York', month: 'Apr', precip: 3.94, locationId: 2 },
         { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62, locationId: 1 }
       ];
+      */
 
       //-- null was added
       expect(targetObj.length).toBe(3);
@@ -2006,13 +2008,15 @@ describe('ObjectUtils', () => {
       const joinFn = (_s:object, _t:object) => ({..._s, ..._t });
       const joinMock = spy(joinFn);
 
-      const results = ObjectUtils.join(targetObj, indexField, targetMap, joinMock);
+      const results = ObjectUtils.join(targetObj, indexField, targetMap, joinMock as any);
+      /*
       const expected = [
         { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, locationId: 3 },
         null,
         { id: 3, city: 'New York', month: 'Apr', precip: 3.94, locationId: 2 },
         { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62, locationId: 1 }
       ];
+      */
 
       //-- null was added
       expect(targetObj.length).toBe(4);
@@ -2119,7 +2123,7 @@ describe('ObjectUtils', () => {
 
         const errorMsg = 'object.joinProperties(objectArray, indexField, targetMap, ...fields): at least one property passed to join';
 
-        expect(() => ObjectUtils.joinProperties(targetObj, indexField, targetMap, null)).toThrow(errorMsg);
+        expect(() => ObjectUtils.joinProperties(targetObj, indexField, targetMap, null as any)).toThrow(errorMsg);
       });
       it('null plus valid sent', () => {
         const targetObj = { id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87 };
@@ -2128,7 +2132,7 @@ describe('ObjectUtils', () => {
 
         const errorMsg = 'object.joinProperties(objectArray, indexField, targetMap, ...fields): at least one property passed to join';
 
-        expect(() => ObjectUtils.joinProperties(targetObj, indexField, targetMap, null, 'lat')).not.toThrow(errorMsg);
+        expect(() => ObjectUtils.joinProperties(targetObj, indexField, targetMap, null as any, 'lat')).not.toThrow(errorMsg);
       });
     });
     it('must have a targetMap', () => {
@@ -2137,7 +2141,7 @@ describe('ObjectUtils', () => {
       const targetMap = null;
       const errorMsg = 'object.join(objectArray, indexField, targetMap, joinFn): targetMap cannot be null';
 
-      expect(() => ObjectUtils.joinProperties(targetObj, indexField, targetMap, 'lat')).toThrow(errorMsg);
+      expect(() => ObjectUtils.joinProperties(targetObj, indexField, targetMap as any, 'lat')).toThrow(errorMsg);
     });
 
     it('can join on a null object', () => {
@@ -2555,7 +2559,7 @@ describe('ObjectUtils', () => {
           + 'defaultObject is expected to be an object with properties set to the defaults to apply';
 
         expect(() => {
-          ObjectUtils.setPropertyDefaults(students, null);
+          (ObjectUtils.setPropertyDefaults as any)(students, null);
         }).toThrow(expectedError);
       });
       it('if the default object is not an object', () => {
@@ -2569,7 +2573,7 @@ describe('ObjectUtils', () => {
           + 'defaultObject is expected to be an object with properties set to the defaults to apply';
 
         expect(() => {
-          ObjectUtils.setPropertyDefaults(students, 2);
+          (ObjectUtils.setPropertyDefaults as any)(students, 2);
         }).toThrow(expectedError);
       });
     });
@@ -2601,25 +2605,25 @@ describe('ObjectUtils', () => {
     it('accesses values from a list', () => {
       const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       const expected = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-      const results = ObjectUtils.propertyFromList(data);
+      const results = ObjectUtils.propertyFromList(data as any);
       expect(results).toStrictEqual(expected);
     });
     it('does not fail if not sent a list', () => {
       const data = 1;
       const expected = [];
-      const results = ObjectUtils.propertyFromList(data);
+      const results = ObjectUtils.propertyFromList(data as any);
       expect(results).toStrictEqual(expected);
     });
     it('does not fail if sent a null list', () => {
       const data = null;
       const expected = [];
-      const results = ObjectUtils.propertyFromList(data);
+      const results = ObjectUtils.propertyFromList(data as any);
       expect(results).toStrictEqual(expected);
     });
     it('does not fail if sent an empty list', () => {
       const data = [];
       const expected = [];
-      const results = ObjectUtils.propertyFromList(data);
+      const results = ObjectUtils.propertyFromList(data as any);
       expect(results).toStrictEqual(expected);
     });
   });
@@ -2764,14 +2768,14 @@ describe('ObjectUtils', () => {
         const list = { id: '100', age: '21', name: 'p1' };
         const expectedError = 'object.mapProperties(collection, formattingFn, ...propertiesToFormat): formattingFn must be provided';
         expect(() => {
-          ObjectUtils.mapProperties(list);
+          (ObjectUtils.mapProperties as any)(list);
         }).toThrow(expectedError);
       });
       it('if the formatting is not a function', () => {
         const list = { id: '100', age: '21', name: 'p1' };
         const expectedError = 'object.mapProperties(collection, formattingFn, ...propertiesToFormat): formattingFn must be provided';
         expect(() => {
-          ObjectUtils.mapProperties(list, 'a', 'id');
+          (ObjectUtils.mapProperties as any)(list, 'a', 'id');
         }).toThrow(expectedError);
       });
     });
@@ -2860,7 +2864,7 @@ describe('ObjectUtils', () => {
         const formatter = null;
         // eslint-disable-next-line
         const expectedError = 'ObjectUtils.formatProperties(collection, propertyTranslations): propertyTranslations must be an object, with the properties matching those to be formatted, and values as functions returning the new value';
-        expect(() => ObjectUtils.formatProperties(data, formatter)).toThrow(expectedError);
+        expect(() => ObjectUtils.formatProperties(data, formatter as any)).toThrow(expectedError);
       });
     });
     describe('can translate with a literal', () => {
@@ -3046,7 +3050,7 @@ describe('ObjectUtils', () => {
           ['first', 'first'],
           ['age', 23]
         ]);
-        const results = ObjectUtils.propertyValueSample(collection);
+        const results = ObjectUtils.propertyValueSample(collection as any);
         expect(results).toStrictEqual(expected);
       });
       it('with multiple objects', () => {
@@ -3061,7 +3065,7 @@ describe('ObjectUtils', () => {
           ['age', 23],
           ['last', 'lastVal']
         ]);
-        const results = ObjectUtils.propertyValueSample(collection);
+        const results = ObjectUtils.propertyValueSample(collection as any);
         expect(results).toStrictEqual(expected);
       });
       it('with multiple objects duplicating values', () => {
@@ -3078,7 +3082,7 @@ describe('ObjectUtils', () => {
           ['age', 23],
           ['last', 'lastVal']
         ]);
-        const results = ObjectUtils.propertyValueSample(collection);
+        const results = ObjectUtils.propertyValueSample(collection as any);
         expect(results).toStrictEqual(expected);
       });
       it('with null values', () => {
@@ -3095,7 +3099,7 @@ describe('ObjectUtils', () => {
           ['age', 23],
           ['last', 'lastVal']
         ]);
-        const results = ObjectUtils.propertyValueSample(collection);
+        const results = ObjectUtils.propertyValueSample(collection as any);
         expect(results).toStrictEqual(expected);
       });
       it('with number values', () => {
@@ -3112,7 +3116,7 @@ describe('ObjectUtils', () => {
           ['age', 23],
           ['last', 'lastVal']
         ]);
-        const results = ObjectUtils.propertyValueSample(collection);
+        const results = ObjectUtils.propertyValueSample(collection as any);
         expect(results).toStrictEqual(expected);
       });
     });
@@ -3250,9 +3254,9 @@ describe('ObjectUtils', () => {
         const source = complexSource; // .slice(0, 8);
 
         //-- return undefined if the value should not persist
-        const result = ObjectUtils.augmentInherit(source, (entry) => ({
-          section: isHeader1(entry.text) ? entry.text.replace(/#+\s+/, '') : undefined,
-          subSection: isHeader2(entry.text) ? entry.text.replace(/#+\s+/, '') : undefined
+        const result = ObjectUtils.augmentInherit(source, (entry: Record<string, unknown>) => ({
+          section: isHeader1(entry.text as string) ? (entry.text as string).replace(/#+\s+/, '') : undefined,
+          subSection: isHeader2(entry.text as string) ? (entry.text as string).replace(/#+\s+/, '') : undefined
         }));
 
         const expected = [
@@ -3454,9 +3458,9 @@ describe('ObjectUtils', () => {
           { text: '## SubSection 1' },
           { text: 'And another subsection 1, but this time related to Section B.' }
         ];
-        const inheritFn = (entry) => ({
-          section: isHeader1(entry.text) ? entry.text.replace(/#+\s+/, '') : undefined,
-          subSection: isHeader2(entry.text) ? entry.text.replace(/#+\s+/, '') : undefined
+        const inheritFn = (entry: { text?: string }) => ({
+          section: isHeader1(entry.text) ? (entry.text ?? '').replace(/#+\s+/, '') : undefined,
+          subSection: isHeader2(entry.text) ? (entry.text ?? '').replace(/#+\s+/, '') : undefined
         });
         const expected = [
           { text: '# Overview', section: 'Overview', subSection: undefined },
@@ -3512,14 +3516,14 @@ describe('ObjectUtils', () => {
 
         const expected = 'augmentInherit(source, augmentFn): source must be an array';
 
-        expect(() => ObjectUtils.augmentInherit('string', inheritFn)).toThrow(expected);
+        expect(() => ObjectUtils.augmentInherit('string' as any, inheritFn)).toThrow(expected);
       });
       it('if the augmentFn is not a function', () => {
         const source = complexSource; // .slice(0, 8);
 
         const expected = 'augmentInherit(source, augmentFn): augmentFn must be a function of signature: (entry, lastValue) => obj';
 
-        expect(() => ObjectUtils.augmentInherit(source, 'string')).toThrow(expected);
+        expect(() => ObjectUtils.augmentInherit(source, 'string' as any)).toThrow(expected);
       });
     });
   });
@@ -3744,7 +3748,7 @@ describe('ObjectUtils', () => {
         const source = null;
         const expected = 'propertyInherit(source, ...properties): source must be an array';
         expect(() => {
-          ObjectUtils.propertyInherit(source, 'property1');
+          ObjectUtils.propertyInherit(source as any, 'property1');
         }).toThrow(expected);
       });
     });
@@ -3877,13 +3881,13 @@ describe('ObjectUtils', () => {
         const source1 = 'string';
         const source2 = [{ last: 'doe' }];
         const expected = 'union(source1:object[], source2:object[]): source1 must be a collection of objects, or a single object';
-        expect(() => ObjectUtils.union(source1, source2)).toThrow(expected);
+        expect(() => ObjectUtils.union(source1 as any, source2 as any)).toThrow(expected);
       });
       it('if source2 is not an object ', () => {
         const source1 = [{ first: 'john' }];
         const source2 = 'string';
         const expected = 'union(source1:object[], source2:object[]): source2 must be a collection of objects, or a single object';
-        expect(() => ObjectUtils.union(source1, source2)).toThrow(expected);
+        expect(() => ObjectUtils.union(source1 as any, source2 as any)).toThrow(expected);
       });
     });
   });
@@ -4313,7 +4317,7 @@ describe('ObjectUtils', () => {
       expect(expectedTransformations.get('Y')).toBe('User-Y');
       expect(expectedTransformations.get('Z')).toBe('User-Z');
 
-      const transformedValues = values.map((val) => expectedTransformations.get(val));
+      const transformedValues = values.map((val) => expectedTransformations.get(val as string));
 
       expect(transformedValues[0]).toBe('User-X');
       expect(transformedValues[1]).toBe('User-Y');
@@ -4343,8 +4347,8 @@ describe('ObjectUtils', () => {
       expect(expectedTransformations.get('Y')).toBe('User-Y');
       expect(expectedTransformations.get('Z')).toBe('User-Z');
 
-      const transformedUsers = values.user.map((val) => expectedTransformations.get(val));
-      const transformedOwners = values.owner.map((val) => expectedTransformations.get(val));
+      const transformedUsers = (values as Record<string, unknown[]>).user.map((val) => expectedTransformations.get(val as string));
+      const transformedOwners = (values as Record<string, unknown[]>).owner.map((val) => expectedTransformations.get(val as string));
 
       ObjectUtils.applyPropertyValues(targetObjects, 'user', transformedUsers);
       ObjectUtils.applyPropertyValues(targetObjects, 'owner', transformedOwners);
@@ -4436,7 +4440,7 @@ describe('ObjectUtils', () => {
     it('throws an error if converting from null', () => {
       const weather = null;
       const expected = 'objectCollectionFromArray: expected collection to be a 2 dimensional array';
-      expect(() => ObjectUtils.objectCollectionFromArray(weather))
+      expect(() => ObjectUtils.objectCollectionFromArray(weather as any))
         .toThrow(expected);
     });
   });
@@ -4460,7 +4464,7 @@ describe('ObjectUtils', () => {
     it('throws an error if converting from null', () => {
       const weather = null;
       const expected = 'objectCollectionToArray: expected collection to be a collection of objects';
-      expect(() => ObjectUtils.objectCollectionToArray(weather))
+      expect(() => ObjectUtils.objectCollectionToArray(weather as any))
         .toThrow(expected);
     });
   });
@@ -4478,13 +4482,13 @@ describe('ObjectUtils', () => {
         { id: 0, city: 'Seattle',  month: 'Apr', precip: 2.68 },
         { id: 2, city: 'Seattle',  month: 'Dec', precip: 5.31 }
       ];
-      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
     it('throws an error if not an object', () => {
       const weather = 23;
       const expected = 'objectCollectionFromDataFrameObject must be passed an object with properties holding 1d tensors';
-      expect(() => ObjectUtils.objectCollectionFromDataFrameObject(weather))
+      expect(() => ObjectUtils.objectCollectionFromDataFrameObject(weather as any))
         .toThrow(expected);
     });
     it('can convert from a dataframe object that may have fields that are not tensors', () => {
@@ -4500,7 +4504,7 @@ describe('ObjectUtils', () => {
         { id: 0, city: 'Seattle',  month: 'Apr', precip: 2.68 },
         { id: 2, city: 'Seattle',  month: 'Dec', precip: 5.31 }
       ];
-      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
     it('can convert from a dataframe even if the tensor lists are uneven', () => {
@@ -4516,7 +4520,7 @@ describe('ObjectUtils', () => {
         { id: 0, city: 'Seattle',  month: 'Apr' },
         { id: 2, city: 'Seattle' }
       ];
-      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
     it('can convert from a dataframe object with headers only', () => {
@@ -4528,19 +4532,19 @@ describe('ObjectUtils', () => {
       };
       const expected = [
       ];
-      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
     it('can convert from an empty dataframe', () => {
       const weather = {};
       const expected = [];
-      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
     it('throws an error if converting from null', () => {
       const weather = null;
       const expected = [];
-      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionFromDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
   });
@@ -4564,13 +4568,13 @@ describe('ObjectUtils', () => {
     it('throws an error if converting from null', () => {
       const weather = null;
       const expected = {};
-      const results = ObjectUtils.objectCollectionToDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionToDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
     it('throws an error if converting from null', () => {
       const weather = null;
       const expected = {};
-      const results = ObjectUtils.objectCollectionToDataFrameObject(weather);
+      const results = ObjectUtils.objectCollectionToDataFrameObject(weather as any);
       expect(results).toStrictEqual(expected);
     });
   });
@@ -4683,7 +4687,7 @@ describe('ObjectUtils', () => {
       const accessor = null;
       const expected = 'object.mapByProperty: expects a propertyName';
 
-      expect(() => ObjectUtils.get(data, accessor)).toThrow(expected);
+      expect(() => ObjectUtils.get(data, accessor as any)).toThrow(expected);
     });
   });
 

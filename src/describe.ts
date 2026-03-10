@@ -1,11 +1,27 @@
 /* eslint-disable max-classes-per-file, class-methods-use-this */
 
-import FormatUtils from "./format.ts";
-import ObjectUtils from "./object.ts";
+import * as FormatUtils from "./format.ts";
+import * as ObjectUtils from "./object.ts";
 
 /**
- * Options for how series are described.
+ * Module to describe objects or sets of data
+ *
+ * Describe an array of objects
+ *  * {@link describeObjects} - given a list of objects, describes each of the fields
+ * Describe an array of values (assuming all are the same type)
+ *  * {@link describeBoolean} - describes a series of booleans
+ *  * {@link describeStrings} - describes a series of strings
+ *  * {@link describeNumbers} - describes a series of numbers
+ *  * {@link describeDates} - describes a series of dates
+ *
+ * Most commonly, {@link describeObjects} is used -
+ * as it describes with the appropriate type for each property.
+ *
+ * Note, if there are multiple child objects within the collection, object.flatten()
+ * will bring those values down through dot notation (similar to arrow format) - so they can be better described.
  */
+
+/** Options for how series are described. uniqueStrings - whether unique strings / frequency should be captured */
 export interface DescribeOptions {
   uniqueStrings?: boolean;
 }
@@ -42,13 +58,17 @@ interface DescribeObjectsOptionsInternal {
 
 /**
  * Base Description for a series of values
- * @class
  */
 class SeriesDescription {
+  /** What is being described */
   what: string | null;
+  /** The type of thing being described */
   type: string;
+  /** The number of entries reviewed */
   count: number = 0;
+  /** The minimum value found */
   min: unknown = null;
+  /** The maximum value found */
   max: unknown = null;
 
   /**
@@ -62,6 +82,9 @@ class SeriesDescription {
     this.type = type;
   }
 
+  /**
+   * Resets the Description to the initial state
+   */
   reset(): void {
     this.count = 0;
     this.max = null;
@@ -69,7 +92,14 @@ class SeriesDescription {
   }
 
   /**
-   * Validates a value is the type expected, or throws if wrong type, or returns false if empty.
+   * Validates a value is the type expected
+   * or throws an error if the type is not
+   * or returns false if the value is 'empty'
+   *
+   * @param value - value to be checked
+   * @param expectedType - the type of the value
+   * @returns true if found and the right type, false if empty
+   * @throws Error if the value is the wrong type
    */
   check(value: unknown, expectedType?: string): boolean | void {
     if (FormatUtils.isEmptyValue(value)) {
@@ -85,6 +115,10 @@ class SeriesDescription {
     return true;
   }
 
+  /**
+   * Checks for minimum and maximum values
+   * @param value - value to compare
+   */
   checkMinMax(value: number): void {
     if (this.min === null || value < (this.min as number)) {
       this.min = value;
@@ -94,6 +128,9 @@ class SeriesDescription {
     }
   }
 
+  /**
+   * Finalizes the review
+   */
   finalize(): SeriesDescriptionResult {
     const result = { ...this } as unknown as SeriesDescriptionResult;
     return result;
@@ -104,8 +141,13 @@ class SeriesDescription {
  * Describes a series of Boolean Values
  */
 class BooleanDescription extends SeriesDescription {
+  /** Mean sum as expressed */
   mean: number = 0.0;
 
+  /**
+   * @param what - what is being described
+   * @param options - options used for describing
+   */
   constructor(what: string | null, options?: DescribeOptions) {
     super(what, "boolean", options);
     this.reset();
@@ -116,6 +158,11 @@ class BooleanDescription extends SeriesDescription {
     this.mean = 0.0;
   }
 
+  /**
+   * Whether the value can be described with this
+   * @param value - value to check
+   * @returns true if the value matches
+   */
   static matchesType(value: unknown): boolean {
     return FormatUtils.isBoolean(value);
   }
@@ -141,11 +188,18 @@ class BooleanDescription extends SeriesDescription {
 /**
  * Describes a series of Numbers
  */
-class NumberDescription extends SeriesDescription {
+export class NumberDescription extends SeriesDescription {
+  /** Mean sum as expressed */
   mean: number = 0.0;
+  /** M2 - sum of squared deviation (Welford's algorithm) */
   m2: number = 0.0;
+  /** Standard deviation of the numbers */
   stdDeviation: number = 0.0;
 
+  /**
+   * @param what - What is being described
+   * @param options - options for describing
+   */
   constructor(what: string | null, options?: DescribeOptions) {
     super(what, "number", options);
     this.reset();
@@ -158,6 +212,11 @@ class NumberDescription extends SeriesDescription {
     this.stdDeviation = 0.0;
   }
 
+  /**
+   * Whether the value can be described with this
+   * @param value - value to check
+   * @returns true if the value matches
+   */
   static matchesType(value: unknown): boolean {
     return typeof value === "number";
   }
@@ -167,6 +226,13 @@ class NumberDescription extends SeriesDescription {
     if (!ok) return;
     super.checkMinMax(value as number);
 
+    /*
+    @see Welford's algorithm
+    @see https://stackoverflow.com/a/1348615
+    @see https://lingpipe-blog.com/2009/03/19/computing-sample-mean-variance-online-one-pass/
+    @see https://lingpipe-blog.com/2009/07/07/welford-s-algorithm-delete-online-mean-variance-deviation/
+    @see https://www.calculator.net/standard-deviation-calculator.html
+    */
     const oldMean = this.mean;
     this.mean += ((value as number) - oldMean) / this.count;
     this.m2 += ((value as number) - oldMean) * ((value as number) - this.mean);
@@ -185,12 +251,20 @@ class NumberDescription extends SeriesDescription {
 /**
  * Describes a series of string values
  */
-class StringDescription extends SeriesDescription {
+export class StringDescription extends SeriesDescription {
+  /** Map of unique values */
   uniqueMap: Map<string, number> | null = null;
+  /** Number of unique values */
   unique: number | null = null;
+  /** The most common string */
   top: string | null = null;
+  /** The frequency of the most common string */
   topFrequency: number | null = null;
 
+  /**
+   * @param what - What is being described
+   * @param options - options for describing
+   */
   constructor(what: string | null, options?: DescribeOptions) {
     super(what, "string", options);
     this.uniqueMap = null;
@@ -205,6 +279,11 @@ class StringDescription extends SeriesDescription {
     this.topFrequency = null;
   }
 
+  /**
+   * Whether the value can be described with this
+   * @param value - value to check
+   * @returns true if the value matches
+   */
   static matchesType(value: unknown): boolean {
     return typeof value === "string";
   }
@@ -252,8 +331,13 @@ class StringDescription extends SeriesDescription {
  * Describes a series of Dates
  */
 class DateDescription extends SeriesDescription {
+  /** Mean sum as expressed (epoch) */
   mean: number | null = null;
 
+  /**
+   * @param what - What is being described
+   * @param options - options for describing
+   */
   constructor(what: string | null, options?: DescribeOptions) {
     super(what, "Date", options);
     this.reset();
@@ -264,6 +348,11 @@ class DateDescription extends SeriesDescription {
     this.mean = null;
   }
 
+  /**
+   * Whether the value can be described with this
+   * @param value - value to check
+   * @returns true if the value matches
+   */
   static matchesType(value: unknown): boolean {
     return value instanceof Date;
   }
@@ -282,7 +371,7 @@ class DateDescription extends SeriesDescription {
 
     this.count += 1;
 
-    const oldMean = this.mean;
+    // const oldMean = this.mean;
     this.mean = this.mean == null ? cleanValue : this.mean + (cleanValue - this.mean) / this.count;
 
     super.checkMinMax(cleanValue);
@@ -298,11 +387,87 @@ class DateDescription extends SeriesDescription {
 }
 
 /**
- * Describes a collection of objects (one description per property).
+ * Describes a collection of objects.
+ *
+ * For example, given the following collection:
+ *
+ * ```
+ *  collection = [{
+ *      first: 'john',
+ *      last: 'doe',
+ *      age: 23,
+ *      enrolled: new Date('2022-01-01')
+ *    }, {
+ *      first: 'john',
+ *      last: 'doe',
+ *      age: 24,
+ *      enrolled: new Date('2022-01-03')
+ *    }, {
+ *      first: 'jan',
+ *      last: 'doe',
+ *      age: 25,
+ *      enrolled: new Date('2022-01-05')
+ *    }];
+ *  ```
+ *
+ * Running `utils.describe.describeObjects(collection);` gives:
+ *
+ *  ```
+ *  [{
+ *      "count": 3,
+ *      "max": "john",
+ *      "min": "jan",
+ *      "top": "john",
+ *      "topFrequency": 2,
+ *      "type": "string",
+ *      "unique": 2,
+ *      "what": "first"
+ *    }, {
+ *      "count": 3,
+ *      "max": "doe",
+ *      "min": "doe",
+ *      "top": "doe",
+ *      "topFrequency": 3,
+ *      "type": "string",
+ *      "unique": 1,
+ *      "what": "last"
+ *    }, {
+ *      "count": 3,
+ *      "max": 25,
+ *      "min": 23,
+ *      "mean": 24,
+ *      "stdDeviation": 0.816496580927726,
+ *      "type": "number",
+ *      "what": "age"
+ *    }, {
+ *      "count": 3,
+ *      "max": "2022-01-05T00:00:00.000Z",
+ *      "min": "2022-01-01T00:00:00.000Z",
+ *      "mean": "2022-01-03T00:00:00.000Z",
+ *      "type": "Date",
+ *      "what": "enrolled"
+ *  }]
+ *  ```
+ *
+ *  Or Rendered to a table: `utils.table(results).render()`:
+ *
+ *  what    |type  |count|max                     |min                     |mean                    |top |topFrequency|unique
+ *  --      |--    |--   |--                      |--                      |--                      |--  |--          |--
+ *  first   |string|3    |john                    |jan                     |                        |john|2           |2
+ *  last    |string|3    |doe                     |doe                     |                        |doe |3           |1
+ *  age     |number|3    |25                      |23                      |24                      |    |            |
+ *  enrolled|Date  |3    |2022-01-05T00:00:00.000Z|2022-01-01T00:00:00.000Z|2022-01-03T00:00:00.000Z|    |            |
+ *
+ * Note, if there are multiple child objects within the collection, object.flatten()
+ * will bring those values down through dot notation (similar to arrow format) - so they can be better described.
  *
  * @param collection - Collection of objects to be described (or single object)
- * @param options - include, exclude, overridePropertyType, maxRows
- * @returns Array of description results, one per property
+ * @param options - options to be used
+ * @param options.include - string list of fields to include in the description
+ * @param options.exclude - string list of fields to exclude in the description
+ * @param options.overridePropertyType - object with property:type values (string|number|date|boolean) that will override how that property is parsed
+ * @param options.maxRows - max rows to consider before halting
+ * @returns collection of descriptions - one for each property
  */
 type AnySeriesDescription =
   | SeriesDescription
@@ -379,7 +544,11 @@ export function describeObjects(
 }
 
 /**
- * Describes a series of strings.
+ * Describes a series of strings
+ *
+ * @param collection - collection of string values to describe
+ * @param options - options for describing strings
+ * @returns Description of the list of strings
  */
 export function describeStrings(
   collection: string[] | string | (string | null | undefined)[],
@@ -392,7 +561,11 @@ export function describeStrings(
 }
 
 /**
- * Describes a series of numbers.
+ * Describes a series of numbers
+ *
+ * @param collection - Array of numbers
+ * @param options - options for describing numbers
+ * @returns NumberDescription result
  */
 export function describeNumbers(
   collection: number[] | number | (number | null | undefined)[],
@@ -405,7 +578,20 @@ export function describeNumbers(
 }
 
 /**
- * Describes a series of boolean values (accepts boolean, string, number).
+ * Describes a series of boolean values.
+ *
+ * Note, that the following are considered TRUE:
+ *
+ * * Boolean true
+ * * Number 1
+ * * String TRUE
+ * * String True
+ * * String true
+ *
+ * @param collection - Array of Boolean Values (boolean, string, or number)
+ * @param options - options for describing boolean values
+ * @returns BooleanDescription result
+ * @see format.parseBoolean
  */
 export function describeBoolean(
   collection: (boolean | string | number | null | undefined)[] | boolean | string | number,
@@ -418,7 +604,11 @@ export function describeBoolean(
 }
 
 /**
- * Describes a series of Date / Epoch numbers.
+ * Describes a series of Date / Epoch Numbers
+ *
+ * @param collection - Array of Dates / Epoch Numbers
+ * @param options - options for describing dates
+ * @returns DateDescription result
  */
 export function describeDates(
   collection: (Date | number | null | undefined)[] | Date | number,
@@ -431,7 +621,10 @@ export function describeDates(
 }
 
 /**
- * Standard deviation of a series of numbers (for testing / sanity check).
+ * Sanity check for standard deviation
+ *
+ * @param series - collection of numbers
+ * @returns standard deviation of the numbers
  */
 export function stdDeviation(series: number[]): number {
   if (series.length < 2) return 0.0;
@@ -442,16 +635,3 @@ export function stdDeviation(series: number[]): number {
   return Math.sqrt(s1 / series.length);
 }
 
-/** Default export: object with all describe APIs (for backward compatibility). */
-const DescribeUtil = {
-  describeObjects,
-  describeStrings,
-  describeNumbers,
-  describeBoolean,
-  describeDates,
-  stdDeviation,
-  NumberDescription,
-  StringDescription,
-};
-
-export default DescribeUtil;

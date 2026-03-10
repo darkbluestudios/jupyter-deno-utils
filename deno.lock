@@ -16,8 +16,7 @@
     "jsr:@std/testing@*": "1.0.16",
     "jsr:@std/testing@^1.0.16": "1.0.16",
     "npm:generate-schema@^2.6.0": "2.6.0",
-    "npm:percentile@*": "1.6.0",
-    "npm:percentile@^1.6.0": "1.6.0",
+    "npm:percentile@1.6.0": "1.6.0",
     "npm:plantuml-encoder@^1.4.0": "1.4.0"
   },
   "jsr": {
@@ -100,7 +99,7 @@
       "jsr:@std/path@^1.1.4",
       "jsr:@std/testing@^1.0.16",
       "npm:generate-schema@^2.6.0",
-      "npm:percentile@^1.6.0",
+      "npm:percentile@1.6.0",
       "npm:plantuml-encoder@^1.4.0"
     ]
   }

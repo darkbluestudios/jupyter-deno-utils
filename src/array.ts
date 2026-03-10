@@ -1,34 +1,115 @@
 /**
  * Utility Methods for working with Arrays / Lists
- *
+ * 
  * similar to {@link module:group}, this is not meant to be exhaustive,
  * only the ones commonly used.
- *
+ * 
+ * * Generate Array
+ *   * {@link module:array.size|array.size(size, default)} - generate array of a specific size and CONSISTENT default value
+ *   * {@link module:array.arrange|array.arrange(size, start, step)} - generate array of a size, and INCREASING default value
+ *   * {@link module:array.arrangeMulti|array.arrangeMulti(n, m, ...)} - generate a multi-dimensional array
+ *   * {@link module:array.clone|array.clone(array)} - deep clones arrays
+ *   * {@link module:array.zip|array.zip(arrayleft, arrayRight)} - zips two arrays to join values at the same index together.
+ * * Sorting
+ *   * {@link module:array.createSort|array.createSort(sortIndex, sortIndex, ...)} - generates a sorting function
+ *   * {@link module:array.SORT_ASCENDING|array.SORT_ASCENDING} - common ascending sorting function for array.sort()
+ *   * {@link module:array.SORT_DESCENDING|array.SORT_DESCENDING} - common descending sorting function for array.sort()
+ *   * {@link module:array.indexify|array.indexify} - identify sections within a 1d array to create a hierarchy.
+ * * Rearrange Array
+ *   * {@link module:array.reshape|array.reshape} - reshapes an array to a size of rows and columns
+ *   * {@link module:array.transpose|array.transpose} - transposes (flips - the array along the diagonal)
+ *   * {@link module:array.resize|array.resize} - repeats or truncates to change the size of an array.
+ * * Picking Values
+ *   * {@link module:array.peekFirst|array.peekFirst} - peeks at the first value in the list
+ *   * {@link module:array.peekLast|array.peekLast} - peeks at the last value in the list
+ *   * {@link module:array.pickRows|array.pickRows} - picks a row from a 2d array
+ *   * {@link module:array.pickColumns|array.pickColumns} - picks a column from a 2d array
+ *   * {@link module:array.pick|array.pick} - picks either/or rows and columns
+ * * Extracting Array Values
+ *   * {@link module:array.extract|array.extract} - synonym to array.pick to pick either a row or column from an array
+ *   * {@link module:array.multiLineSubstr|array.multiLineSubstr} - Extract
+ *        {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substr|Substr}
+ *        from a multi-line string or array of strings
+ *   * {@link module:array.multiLineSubstring|array.multiLineSubstring} - Extract 
+ *        {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/substring|Substring}
+ *        from a multi-line string or array of strings
+ *   * {@link module:array.multiStepReduce|array.multiStepReduce} - Performs reduce, and returns the value of reduce at each step
+ *   * {@link module:array.extractFromHardSpacedTable|array.extractFromHardSpacedTable} - Extract values where each line has no delimiter,
+ *      but instead a column index (ex: column 13)
+ * * Applying a value
+ *   * {@link module:array.applyArrayValue|array.applyArrayValue} - applies a value deeply into an array safely
+ *   * {@link module:array.applyArrayValues|array.applyArrayValues} - applies a value / multiple values deeply into an array safely
+ * * Understanding Values
+ *   * {@link module:array.isMultiDimensional|array.isMultiDimensional} - determines if an array is multi-dimensional
+ * * Custom Iterators
+ *   * {@link module:array~PeekableArrayIterator|PeekableArrayIterator} - Iterator that lets you peek ahead while not moving the iterator.
+ * * Iterating over values
+ *   * {@link module:array.delayedFn|delayedFn} - Similar to Function.bind() - you specify a function and arguments only to be called when you ask
+ *   * {@link module:array.chainFunctions|chainFunctions} - Chain a set of functions to be called one after another.
+ *   * {@link module:array.asyncWaitAndChain|asyncWaitAndChain} - Chains a set of functions to run one after another, but with a delay between.
+ * 
  * @module array
  * @exports array
  */
 
-/** Options for picking rows and/or columns from a 2d array */
+/** Options for picking rows and/or columns from a 2d array **/
 export interface PickOptions {
   rows?: number[] | null;
   columns?: number[] | null;
 }
 
-/** Result entry from indexify() */
+/** Result entry from indexify() **/
 export interface IndexifyEntry {
   entry: unknown;
   section: number[];
   subIndex: number;
 }
 
-type SortComparator = (a: unknown, b: unknown) => number;
+export type SortComparator = (a: unknown, b: unknown) => number;
 
-const SORT_ASCENDING: SortComparator = (a, b) =>
+/**
+ * Simple ascending sort function
+ * @type {Function}
+ * @example
+ * 
+ * [3,5,1,2,4].sort(utils.array.SIMPLE_ASCENDING)
+ * // [1,2,3,4,5]
+ **/
+export const SORT_ASCENDING: SortComparator = (a, b) =>
   a === b ? 0 : (a as number) > (b as number) ? 1 : -1;
-const SORT_DESCENDING: SortComparator = (a, b) =>
+
+/**
+ * Simple descending sort function
+ * @example
+ * [3,5,1,2,4].sort(utils.array.SORT_DESCENDING)
+ * // [5,4,3,2,1]
+ * @type {Function}
+ **/
+export const SORT_DESCENDING: SortComparator = (a, b) =>
   a === b ? 0 : (a as number) > (b as number) ? -1 : 1;
 
-function createSort(...fields: string[]): SortComparator {
+/**
+ * Creates a sort function based on fields of an object.
+ * 
+ * ```
+ * [{score: 200, name: 'jane'}, {score: 300, name: 'john'}, {score: 300, name: 'jonny'}];
+ * // sort by score descending, and then by name ascending
+ * sampleData.sort(utils.array.createSort('-score','name'));
+ * // [{ score: 300, name: 'john' }, { score: 300, name: 'jonny' },{ score: 200, name: 'jane' }]
+ * ```
+ * 
+ * @example
+ * 
+ * sampleData = [{i:4}, {v:2}, {v:1}, {v:3}];
+ * sortedData = sampleData.sort(
+ *    utils.array.createSort('-v')
+ * );
+ * // [{v:4}, {v:3}, {v:2}, {v:1}]
+ * 
+ * @param {String} fieldName - name of property to sort by with - for descending
+ * @returns {Function}
+ ***/
+export function createSort(...fields: string[]): SortComparator {
   if (fields.length < 1) {
     return SORT_ASCENDING;
   }
@@ -63,29 +144,121 @@ function createSort(...fields: string[]): SortComparator {
   };
 }
 
-function peekFirst<T>(targetArray: T[] | null | undefined, defaultVal: T | null = null): T | null {
+/**
+ * Peek in an array and return the first value in the array.
+ * 
+ * Or return the default value (`defaultVal`) - if the array is empty
+ * 
+ * @param {Array} targetArray - array to be peeked within
+ * @param {any} defaultVal - the value to return if the array is empty
+ * @returns {any}
+ **/
+export function peekFirst<T>(targetArray: T[] | null | undefined, defaultVal: T | null = null): T | null {
   return Array.isArray(targetArray) && targetArray.length > 0 ? targetArray[0] : defaultVal;
 }
 
-function peekLast<T>(targetArray: T[] | null | undefined, defaultVal: T | null = null): T | null {
+/**
+ * Peek in an array and return the last value in the array.
+ * 
+ * Or return the default value (`defaultVal`) - if the array is empty
+ * 
+ * @param {Array} targetArray - array to be peeked within
+ * @param {any} defaultVal - the value to return if the array is empty
+ * @returns {any}
+ **/
+export function peekLast<T>(targetArray: T[] | null | undefined, defaultVal: T | null = null): T | null {
   return Array.isArray(targetArray) && targetArray.length > 0
     ? targetArray[targetArray.length - 1]
     : defaultVal;
 }
 
-function pickRows(array2d: unknown[][], ...rowIndices: (number | number[])[]): unknown[][] {
+/**
+ * Picks a row (or multiple rows) from a 2d array.
+ * 
+ * Please also see [Danfo.js](https://danfo.jsdata.org/) for working with DataFrames.
+ * 
+ * @param {Array} array2d - 2d array to pick from [row][column]
+ * @param {...Number} rowIndices - Indexes of the row to return, [0...length-1]
+ * @returns - Array with only those rows
+ * @see {@link module:array.pick|array.pick} - pick either rows or columns
+ * @example
+ * data = [
+ *  ['john', 23, 'purple'],
+ *  ['jane', 32, 'red'],
+ *  ['ringo', 27, 'green']
+ * ];
+ * 
+ * utils.array.pickRows(data, 0);
+ * //-- [['john', 23, 'purple']];
+ * 
+ * utils.array.pickRows(data, 0, 1);
+ * //-- [['john', 23, 'purple'], ['jane', 32, 'red']];
+ **/
+export function pickRows(array2d: unknown[][], ...rowIndices: (number | number[])[]): unknown[][] {
   const cleanRowIndices =
     rowIndices.length > 0 && Array.isArray(rowIndices[0]) ? rowIndices[0] : (rowIndices as number[]);
   return cleanRowIndices.map((index) => array2d[index]);
 }
 
-function pickColumns(array2d: unknown[][], ...columns: (number | number[])[]): unknown[][] {
+/**
+ * Picks a column (or multiple columns) from a 2d array
+ * 
+ * Please also see [Danfo.js](https://danfo.jsdata.org/) for working with DataFrames.
+ * 
+ * @param {Array} array2d - 2d array to pick from [row][column]
+ * @param  {...any} columns - Indexes of the columns to pick the values from: [0...row.length-1]
+ * @returns - Array with all rows, and only those columns
+ * @see {@link module:array.pick|array.pick} - pick either rows or columns
+ * @example
+ * data = [
+ *  ['john', 23, 'purple'],
+ *  ['jane', 32, 'red'],
+ *  ['ringo', 27, 'green']
+ * ];
+ * 
+ * utils.array.pickColumns(data, 0);
+ * //-- [['john'], ['jane'], ['ringo']];
+ * 
+ * utils.array.pickColumns(data, 0, 2);
+ * //-- [['john', 'purple'], ['jane', 'red'], ['ringo', 'green']];
+ **/
+export function pickColumns(array2d: unknown[][], ...columns: (number | number[])[]): unknown[][] {
   const cleanColumns =
     columns.length > 0 && Array.isArray(columns[0]) ? columns[0] : (columns as number[]);
   return array2d.map((row) => cleanColumns.map((columnIndex) => row[columnIndex]));
 }
 
-function pick(array2d: unknown[][], options?: PickOptions | null): unknown[][] {
+/**
+ * Convenience function for picking specific rows and columns from a 2d array.
+ * 
+ * Please also see [Danfo.js](https://danfo.jsdata.org/) for working with DataFrames.
+ * 
+ * @param {Array} array2d - 2d array to pick from [row][column]
+ * @param {Object} options - options on which to pick
+ * @param {Number[]} [options.rows = null] - indices of the rows to pick
+ * @param {Number[]} [options.columns = null] - indices of the columns to pick.
+ * @returns {Array} - 2d array of only the rows and columns chosen.
+ * @see {@link module:array.pickRows|array.pickRows} - picking rows
+ * @see {@link module:array.pickColumns|array.pickColumns} - picking columns
+ * @see {@link module:array.applyArrayValues|array.applyArrayValues} - applies a value / multiple values deeply into an array safely
+ * @returns - 2dArray of the columns and rows requested
+ * @example
+ * data = [
+ *  ['john', 23, 'purple'],
+ *  ['jane', 32, 'red'],
+ *  ['ringo', 27, 'green']
+ * ];
+ * 
+ * utils.array.pick(data, {rows: [0, 1]});
+ * //-- [['john', 23, 'purple'], ['jane', 32, 'red']];
+ * 
+ * utils.array.pick(data, {columns: [0, 2]});
+ * //-- [['john', 'purple'], ['jane', 'red'], ['ringo', 'green']];
+ * 
+ * utils.array.pick(data, {rows:[0, 1], columns:[0, 2]});
+ * //-- [['john', 'purple'], ['jane', 'red']];
+ **/
+export function pick(array2d: unknown[][], options?: PickOptions | null): unknown[][] {
   const cleanOptions = options || {};
   const { rows = null, columns = null } = cleanOptions;
   let results: unknown[][] = array2d;
@@ -98,7 +271,104 @@ function pick(array2d: unknown[][], options?: PickOptions | null): unknown[][] {
   return results;
 }
 
-function applyArrayValue(
+/**
+ * Convenience function for picking specific rows and columns from a 2d array.
+ * 
+ * Alias of {@link module:array.pick|array.pick}
+ * 
+ * Please also see [Danfo.js](https://danfo.jsdata.org/) for working with DataFrames.
+ * 
+ * @param {Array} array2d - 2d array to pick from [row][column]
+ * @param {Object} options - options on which to pick
+ * @param {Number[]} [options.rows = null] - indices of the rows to pick
+ * @param {Number[]} [options.columns = null] - indices of the columns to pick.
+ * @returns {Array} - 2d array of only the rows and columns chosen.
+ * @see {@link module:array.pickRows} - picking rows
+ * @see {@link module:array.pickColumns} - picking columns
+ * @returns - 2dArray of the columns and rows requested
+ * @example
+ * data = [
+ *  ['john', 23, 'purple'],
+ *  ['jane', 32, 'red'],
+ *  ['ringo', 27, 'green']
+ * ];
+ * 
+ * utils.array.pick(data, {rows: [0, 1]});
+ * //-- [['john', 23, 'purple'], ['jane', 32, 'red']];
+ * 
+ * utils.array.pick(data, {columns: [0, 2]});
+ * //-- [['john', 'purple'], ['jane', 'red'], ['ringo', 'green']];
+ * 
+ * utils.array.pick(data, {rows:[0, 1], columns:[0, 2]});
+ * //-- [['john', 'purple'], ['jane', 'red']];
+ **/
+export const extract = pick;
+
+/**
+ * Applies deeply onto an array safely - in-place using dot-notation paths
+ * even if the child paths don't exist.
+ * 
+ * While tthis can be as simple as safely applying a value even if targetObj may be null
+ * 
+ * ```
+ * targetObj = [1, 2, null, 4, 5];
+ * 
+ * utils.object.applyPropertyValue(targetObj, '[2]', 3);
+ * // [1, 2, 3, 4, 5]
+ * // equivalent to targetObj[2] = 3;
+ * ```
+ * 
+ * This is much more safely working with deeply nested objects
+ * 
+ * ```
+ * targetObj = [{
+ *  name: 'john smith',
+ *  class: {
+ *    name: 'ECON_101',
+ *    professor: {
+ *      last_name: 'Winklemeyer'
+ *    }
+ *   }
+ * }];
+ * 
+ * utils.object.applyPropertyValue(targetObj, '[0].class.professor.first_name', 'René');
+ * // [{
+ * //  name: 'john smith',
+ * //  class: {
+ * //    name: 'ECON_101',
+ * //    professor: {
+ * //      last_name: 'Winklemeyer',
+ * //      first_name: 'René' // <- Added
+ * //    }
+ * //   }
+ * // }];
+ * ```
+ * 
+ * or creating intermediary objects along the path - if they did not exist first.
+ * 
+ * ```
+ * targetObj = [{
+ *  name: 'john smith'
+ * }];
+ * utils.object.applyPropertyValue(targetObj, '[0].class.professor.first_name', 'René');
+ * [{
+ *  name: 'john smith',
+ *  class: {
+ *    professor: {
+ *      first_name: 'René'
+ *    }
+ *   }
+ * }];
+ * ```
+ * 
+ * @param {Array} collection - array to apply the value to
+ * @param {string} path - dot notation path to set the value, ex: 'geo', or 'states[0].prop'
+ * @param {any} value - value to set
+ * @returns {Array} - the base array
+ * @see {@link module:array.pick|array.pick} - to pick a row or column into an array
+ * @see {@link module:array.applyArrayValues|array.applyArrayValues} - applies an array safely and deeply onto another array of values
+ **/
+export function applyArrayValue(
   collection: Record<string, unknown>[] | Record<string, unknown>,
   path: string,
   value: unknown
@@ -130,7 +400,45 @@ function applyArrayValue(
   return collection;
 }
 
-function applyArrayValues(
+/**
+ * Converse from the extractPropertyValue, this takes a value / set of values
+ * and applies the values for each index in the collection.
+ * 
+ * for example:
+ * 
+ * ```
+ * weather = [{ id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87 },
+ *   { id: 3, city: 'New York', month: 'Apr', precip: 3.94 },
+ *   { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62 }];
+ * 
+ * cities = utils.object.extractObjectProperty('city');
+ * // ['Seattle', 'New York', 'Chicago'];
+ * 
+ * //-- get a separate dataset that needs to be joined, like geocodeCity(cities);
+ * geocodedCities = [{ city: 'Seattle', state: 'WA', country: 'USA' },
+ *   { city: 'New York', state: 'NY', country: 'USA' },
+ *   { city: 'Chicago', state: 'IL', country: 'USA' }];
+ * 
+ * utils.array.applyArrayValues(weather, 'geo', geocodedCities);
+ * // [{ id: 1, city: 'Seattle',  month: 'Aug', precip: 0.87, geo: { city: 'Seattle', state: 'WA', country: 'USA' } },
+ * //  { id: 3, city: 'New York', month: 'Apr', precip: 3.94, geo: { city: 'New York', state: 'NY', country: 'USA' } },
+ * //  { id: 6, city: 'Chicago',  month: 'Apr', precip: 3.62, geo: { city: 'Chicago', state: 'IL', country: 'USA' } }];
+ * ```
+ * 
+ * Note that traditional [Array.map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map)
+ * works best for if you are working with objects completely in memory.
+ * 
+ * But this helps quite a bit if the action of mapping / transforming values
+ * needs to be separate from the extraction / application of values back.
+ * 
+ * @param {Array} collection - array to apply the value to on each index
+ * @param {string} path - dot notation path to set the value within each index, ex: 'geo', or 'states[0].prop'
+ * @param {any} value - the value that should be set at that path.
+ * @returns {Object}
+ * @see {@link module:array.applyArrayValue|array.applyArrayValue} - to apply a single value to a single object
+ * @see {@link module:array.pick|array.pick} - to pick a row or column into an array
+ **/
+export function applyArrayValues(
   collection: Record<string, unknown>[] | Record<string, unknown>,
   path: string,
   valueList: unknown[] | unknown
@@ -151,7 +459,23 @@ function applyArrayValues(
   return collection;
 }
 
-function size(
+/**
+ * Creates an array of a specific size and default value
+ * 
+ * Especially useful for forLoops, map or reduce
+ * 
+ * @example
+ * 
+ * utils.array.size(3, null)
+ *  .map((v, index) => `item ${index}`)
+ * 
+ * @param {Number} length - the length of the new array
+ * @param {any} defaultValue - the new value to put in each cell
+ * @see {@link module:array.arrange} for values based on the index
+ * @see https://stackoverflow.com/questions/35578478/array-prototype-fill-with-object-passes-reference-and-not-new-instance
+ * @returns {Array} - an array of length size with default values
+ **/
+export function size(
   length: number,
   defaultValue?: unknown | ((index: number) => unknown)
 ): unknown[] {
@@ -161,25 +485,85 @@ function size(
   return new Array(length).fill(defaultValue);
 }
 
-function arrange(len: number, start = 0, step = 1): number[] {
+/**
+ * Creates an array of values to replace for loops
+ * 
+ * @example
+ * 
+ * utils.array.arange(10, 1)
+ *  .map((val) => `item ${val}`);
+ * 
+ * // [
+ * //   'item 1', 'item 2',
+ * //   'item 3', 'item 4',
+ * //   'item 5', 'item 6',
+ * //   'item 7', 'item 8',
+ * //   'item 9', 'item 10'
+ * // ]
+ * @param {Number} length - the number of items toreturn
+ * @param {Number} [start=0] - the starting number
+ * @param {Number} [step=1] - the number to increment for each step
+  * @see {@link module:array.size} for consistent values in the array
+ * @return {Number[]} - collection of numbers
+ **/
+export function arrange(len: number, start = 0, step = 1): number[] {
   return Array.from(new Array(len)).map((_v, i) => i * step + start);
 }
 
-function isMultiDimensional(targetArray: unknown): boolean {
+export const arange = arrange;
+
+/**
+ * Determine whether an array is multi-dimensional (an array of arrays)
+ * 
+ * For example:
+ * 
+ * ```
+ * utils.array.isMultiDimensional(0); // false
+ * utils.array.isMultiDimensional([0,1,2,3]); // false
+ * utils.array.isMultiDimensional([[0,1], [2,3]]); // true
+ * utils.array.isMultiDimensional([0, [1,2]]); // true
+ * ```
+ * 
+ * @param {Array} targetArray - array to check if multi-dimensional
+ * @returns {Boolean} - if the targetArray has any values that are multi-dimensional
+ **/
+export function isMultiDimensional(targetArray: unknown): boolean {
   if (!targetArray || !Array.isArray(targetArray)) {
     return false;
   }
   return targetArray.find((v) => Array.isArray(v)) !== undefined;
 }
 
-function arrayLength2d(targetArray: unknown[][]): number {
+/**
+ * Determines the depth of a two dimensional array
+ * @param {Array} targetArray - two dimensional array
+ * @returns {Number}
+ * @private
+ **/
+export function arrayLength2d(targetArray: unknown[][]): number {
   return (targetArray || []).reduce((max, line) => {
     const len = (line || []).length;
     return len > max ? len : max;
   }, 0);
 }
 
-function transpose(matrix: unknown[][] | unknown[]): unknown[][] {
+/**
+ * Transposes a two dimensional array, so an NxM becomes MxN
+ * @param {any[]} matrix - MxN array
+ * @returns {any[]} - NxM array
+ * 
+ * @example
+ * 
+ * baseArray = [ 0, 1, 2, 3, 4 ];
+ * utils.array.transpose(utils.array.arrange(5));
+ * 
+ * // [ [ 0 ],
+ * //   [ 1 ],
+ * //   [ 2 ],
+ * //   [ 3 ],
+ * //   [ 4 ] ]
+ **/
+export function transpose(matrix: unknown[][] | unknown[]): unknown[][] {
   if (!matrix || !Array.isArray(matrix)) {
     return [];
   }
@@ -197,7 +581,32 @@ function transpose(matrix: unknown[][] | unknown[]): unknown[][] {
   return result;
 }
 
-function reshape(sourceArray: unknown[][] | unknown[], numColumns: number): unknown[][] {
+/**
+ * Re-shapes an NxM dimensional array by number of columns
+ * @param {any[]} sourceArray - an array to reshape
+ * @param {Number} numColumns - number of columns
+ * @returns {any[][]} - 2 dimensinal array
+ * @example
+ * 
+ * baseArray = utils.array.arrange(12);
+ * // [
+ * //    0,  1, 2, 3, 4, 5,  6, 7, 8, 9, 10, 11
+ * // ]
+ * 
+ * //-- reshape the 1d array based on 3 columns
+ * newArray = utils.array.reshape(baseArray, 3)
+ * // [ [ 0, 1, 2 ],
+ * //   [ 3, 4, 5 ],
+ * //   [ 6, 7, 8 ],
+ * //   [ 9, 10, 11 ] ];
+ * 
+ * //-- now reshape the 4x3 array to 3x4
+ * utils.array.reshape(newArray, 4);
+ * // [ [ 0, 1, 2, 3 ],
+ * //   [ 4, 5, 6, 7 ],
+ * //   [ 8, 9, 10, 11 ] ]
+ **/
+export function reshape(sourceArray: unknown[][] | unknown[], numColumns: number): unknown[][] {
   const results: unknown[][] = [];
   let resultGroup: unknown[] = [];
   const array1d = (sourceArray as unknown[]).flat();
@@ -213,12 +622,69 @@ function reshape(sourceArray: unknown[][] | unknown[], numColumns: number): unkn
   return results;
 }
 
-function clone<T>(target: T): T {
+/**
+ * Deep clones multi-dimensional arrays.
+ * 
+ * If you want to just deep clone a 1d array, use [...target] instead
+ * 
+ * NOTE: this only deep clones Arrays, and not the values within the arrays.
+ * 
+ * ```
+ * const sourceArray = [[0, 1], [2, 3]];
+ * const targetArray = utils.array.clone(sourceArray);
+ * 
+ * targetArray[0][0] = 99;
+ * 
+ * console.log(targetArray); // [[99, 1], [2, 3]];
+ * console.log(sourceArray); // [[0, 1], [2, 3]];
+ * ```
+ * 
+ * @param {any | Array} target - Array to be cloned
+ * @returns New deep-cloned array
+ **/
+export function clone<T>(target: T): T {
   if (!Array.isArray(target)) return target;
   return target.map((item) => (Array.isArray(item) ? clone(item) : item)) as T;
 }
 
-function arrangeMulti(...dimensions: number[]): unknown[] | unknown {
+/**
+ * Creates an array for multiple dimensions of varying sizes.
+ * 
+ * (In order from higher order dimensions to lower)
+ * 
+ * ```
+ * utils.array.arangeMulti(0); // []
+ * utils.array.arangeMulti(2); // [0, 1]
+ * utils.array.arangeMulti(4); // [0, 1, 2, 3]
+ * utils.array.arangeMulti(2, 2); // [[0, 1], [0, 1]]
+ * utils.array.arangeMulti(2, 2, 2); // [[[0, 1], [0, 1]], [[0, 1], [0, 1]]]
+ * utils.array.arangeMulti(2, 2, 4); // [[[0, 1, 2, 3], [0, 1, 2, 3]], [[0, 1, 2, 3], [0, 1, 2, 3]]]
+ * ```
+ * 
+ * Note that this can help with laying items out within a grid
+ * 
+ * ```
+ * gridPositions = utils.array.arangeMulti(4, 4)
+ *   .reduce((result, row, rowIndex) => [ ...result,
+ *      ...row.reduce((rowReduce, value, columnIndex) => [...rowReduce, [rowIndex, columnIndex]], [])
+ *   ], []);
+ * // [
+ * //   [ 0, 0 ], [ 0, 1 ], [ 0, 2 ], [ 0, 3 ],
+ * //   [ 1, 0 ], [ 1, 1 ], [ 1, 2 ], [ 1, 3 ],
+ * //   [ 2, 0 ], [ 2, 1 ], [ 2, 2 ], [ 2, 3 ],
+ * //   [ 3, 0 ], [ 3, 1 ], [ 3, 2 ], [ 3, 3 ]
+ * // ]
+ * 
+ * gridPositions.forEach((value, index) => {
+ *   const [x, y] = gridPositions[index];
+ *   console.log(`placing ${value} in row:${x}, column:${y}`);
+ * });
+ * ```
+ * 
+ * @param  {...any} dimensions - sizes of each dimension to create
+ * @returns Multi-dimensional array 
+ **/
+export function arrangeMulti(...dimensions: number[]): unknown[] | unknown {
   if (dimensions.length < 1) {
     return [];
   }
@@ -231,7 +697,146 @@ function arrangeMulti(...dimensions: number[]): unknown[] | unknown {
   return size(currentDimension, () => clone(childDimensionalValue));
 }
 
-function indexify(
+/** 
+ * Create a unique number index for each element in an array,
+ * alternatively using additional functions to indicate hierarchies of data.
+ * 
+ * For example, markdown can be considered a hierarchy of data:
+ * 
+ * ```
+ * markdownList = `# Overview
+ * This entire list is a hierarchy of data.
+ * 
+ * # Section A
+ * This describes section A
+ * 
+ * ## SubSection 1
+ * With a subsection belonging to Section A
+ * 
+ * ## SubSection 2
+ * And another subsection sibling to SubSection 1, but also under Section A.
+ * 
+ * # Section B
+ * With an entirely unrelated section B, that is sibling to Section A
+ * 
+ * ## SubSection 1
+ * And another subsection 1, but this time related to Section B.`;
+ * ```
+ * 
+ * And we want to convert this 1d array into a hierarchy.
+ * 
+ * ```
+ * data = markdownList.split('\n')
+ *    .filter(line => line ? true : false); // check for empty lines
+ * 
+ * utils.format.consoleLines( data, 4);
+ * // ['# Overview',
+ * // 'This entire list is a hierarchy of data.',
+ * // '# Section A',
+ * // 'This describes section A',;
+ * 
+ * //-- functions that return True if we are in a new "group"
+ * isHeader1 = (str) => str.startsWith('# ');
+ * 
+ * isHeader1('# Overview'); // true
+ * isHeader1('This entire list is a hierarchy of data'); // false
+ * isHeader1('# Section A'); // true
+ * isHeader1('This describes section A'); // false
+ * 
+ * indexedData = utils.array.indexify(data, isHeader1);
+ * // [
+ * //   { entry: 'Heading', section: [ 0 ], subIndex: 1 },
+ * //   { entry: '# Overview', section: [ 1 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'This entire list is a hierarchy of data.',
+ * //     section: [ 1 ],
+ * //     subIndex: 1
+ * //   },
+ * //   { entry: '# Section A', section: [ 2 ], subIndex: 0 },
+ * //   { entry: 'This describes section A', section: [ 2 ], subIndex: 1 },
+ * //   { entry: '## SubSection 1', section: [ 2 ], subIndex: 2 },
+ * //   {
+ * //     entry: 'With a subsection belonging to Section A',
+ * //     section: [ 2 ],
+ * //     subIndex: 3
+ * //   },
+ * //   { entry: '## SubSection 2', section: [ 2 ], subIndex: 4 },
+ * //   {
+ * //     entry: 'And another subsection sibling to SubSection 1, but also under Section A.',
+ * //     section: [ 2 ],
+ * //     subIndex: 5
+ * //   },
+ * //   { entry: '# Section B', section: [ 3 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'With an entirely unrelated section B, that is sibling to Section A',
+ * //     section: [ 3 ],
+ * //     subIndex: 1
+ * //   },
+ * //   { entry: '## SubSection 1', section: [ 3 ], subIndex: 2 },
+ * //   {
+ * //     entry: 'And another subsection 1, but this time related to Section B.',
+ * //     section: [ 3 ],
+ * //     subIndex: 3
+ * //   }
+ * // ];
+ * ```
+ * 
+ * Note that this only indexes elements by the first header.
+ * 
+ * To index this with two levels of hierarchy, we can pass another function.
+ * 
+ * ```
+ * isHeader2 = (str) => str.startsWith('## ');
+ * 
+ * isHeader2('# Overview'); // false
+ * isHeader2('This entire list is a hierarchy of data'); // false
+ * isHeader2('# Section A'); // true
+ * isHeader2('This describes section A'); // false
+ * 
+ * indexedData = utils.array.indexify(data, isHeader1, isHeader2);
+ * // [
+ * //   { entry: 'Heading', section: [ 0, 0 ], subIndex: 1 },
+ * //   { entry: '# Overview', section: [ 1, 0 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'This entire list is a hierarchy of data.',
+ * //     section: [ 1, 0 ],
+ * //     subIndex: 1
+ * //   },
+ * //   { entry: '# Section A', section: [ 2, 0 ], subIndex: 0 },
+ * //   { entry: 'This describes section A', section: [ 2, 0 ], subIndex: 1 },
+ * //   { entry: '## SubSection 1', section: [ 2, 1 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'With a subsection belonging to Section A',
+ * //     section: [ 2, 1 ],
+ * //     subIndex: 1
+ * //   },
+ * //   { entry: '## SubSection 2', section: [ 2, 2 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'And another subsection sibling to SubSection 1, but also under Section A.',
+ * //     section: [ 2, 2 ],
+ * //     subIndex: 1
+ * //   },
+ * //   { entry: '# Section B', section: [ 3, 0 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'With an entirely unrelated section B, that is sibling to Section A',
+ * //     section: [ 3, 0 ],
+ * //     subIndex: 1
+ * //   },
+ * //   { entry: '## SubSection 1', section: [ 3, 1 ], subIndex: 0 },
+ * //   {
+ * //     entry: 'And another subsection 1, but this time related to Section B.',
+ * //     section: [ 3, 1 ],
+ * //     subIndex: 1
+ * //   }
+ * // ];
+ * ```
+ * 
+ * @param {Array} source - list of values to index
+ * @param {...Function} sectionIndicatorFunctions - each function indicates a new section
+ * @returns {Object[]} - collection of objects, each with a new section (indicating the layers) 
+ *            and subIndex: unique value in the section (always 0 for header)
+ **/
+export function indexify(
   source: unknown[],
   ...sectionIndicatorFunctions: ((entry: unknown) => boolean)[]
 ): IndexifyEntry[] {
@@ -268,7 +873,46 @@ function indexify(
   return results;
 }
 
-function multiLineSubstr(
+/**
+ * Parse a fixed length table of strings (often in markdown format)
+ * 
+ * This is different from multiLineSubString
+ * in this uses a start position and string length (not start and end position per line)
+ * 
+ * For example, say you got a string formatted like this:
+ * 
+ * ```
+ * hardSpacedString = '' +
+ * `id first_name last_name  city        email                        gender ip_address      airport_code car_model_year
+ * -- ---------- ---------- ----------- ---------------------------- ------ --------------- ------------ --------------
+ * 1  Thekla     Brokenshaw Chicago     tbrokenshaw0@kickstarter.com Female 81.118.170.238  CXI          2003          
+ * 2  Lexi       Dugall     New York    ldugall1@fc2.com             Female 255.140.25.31   LBH          2005          
+ * 3  Shawna     Burghill   London      sburghill2@scribd.com        Female 149.240.166.189 GBA          2004          
+ * 4  Ginger     Tween      Lainqu      gtween3@wordpress.com        Female 132.67.225.203  EMS          1993          
+ * 5  Elbertina  Setford    Los Angeles esetford4@ted.com            Female 247.123.242.49  MEK          1989          `;
+ * ```
+ * 
+ * This can be a bit hard to parse, because the space delimiter is a valid character in the `city` column, ex: `New York`.
+ * 
+ * Instead, we can use the starting index and number of characters, to extract the data out
+ * 
+ * ```
+ * const carModelYears = ArrayUtils.multiLineSubstr(hardSpacedString, 102);
+ * // ['car_model_year', '--------------', '2003          ', '2005          ', '2004          ', '1993          ', '1989'];
+ * const ipAddresses = ArrayUtils.multiLineSubstr(hardSpacedString, 73, 14);
+ * // ['ip_address    ', '--------------', '81.118.170.238', '255.140.25.31 ', '149.240.166.18', '132.67.225.203', '247.123.242.49'];
+ * ```
+ * @see {@link module:array.multiLineSubstring|multiLineSubstring} - to use start and end character positions
+ * @see {@link module:array.multiStepReduce|multiStepReduce} - for example on how to extract data from hard spaced arrays
+ * 
+ * {@link module:array.size|array.size(size, default)} - generate array of a specific size and CONSISTENT default value
+ * 
+ * @param {String|String[]} str - multi-line string or array of strings
+ * @param {Number} start - the starting index to substr
+ * @param {Number} [len=0] - optional length of string to substr
+ * @returns {String[]} - substr values from each line
+ **/
+export function multiLineSubstr(
   target: string | string[],
   start: number,
   length?: number
@@ -287,7 +931,47 @@ function multiLineSubstr(
   return lines.map((line) => line.substr(start, length));
 }
 
-function multiLineSubstring(
+/**
+ * Parse a fixed length table of strings (often in markdown format)
+ * 
+ * This is different from multiLineSubStr
+ * in this uses a start and end position (not start and length)
+ * 
+ * For example, say you got a string formatted like this:
+ * 
+ * ```
+ * hardSpacedString = '' +
+ * `id first_name last_name  city        email                        gender ip_address      airport_code car_model_year
+ * -- ---------- ---------- ----------- ---------------------------- ------ --------------- ------------ --------------
+ * 1  Thekla     Brokenshaw Chicago     tbrokenshaw0@kickstarter.com Female 81.118.170.238  CXI          2003          
+ * 2  Lexi       Dugall     New York    ldugall1@fc2.com             Female 255.140.25.31   LBH          2005          
+ * 3  Shawna     Burghill   London      sburghill2@scribd.com        Female 149.240.166.189 GBA          2004          
+ * 4  Ginger     Tween      Lainqu      gtween3@wordpress.com        Female 132.67.225.203  EMS          1993          
+ * 5  Elbertina  Setford    Los Angeles esetford4@ted.com            Female 247.123.242.49  MEK          1989          `;
+ * ```
+ * 
+ * This can be a bit hard to parse, because the space delimiter is a valid character in the `city` column, ex: `New York`.
+ * 
+ * Instead, we can use the starting index and number of characters, to extract the data out.
+ * 
+ * Note, this function uses the starting and ending character positions, to extract,
+ * where {@link module:array.multiLineSubstr|multiLineSubstr} - uses the start and character length instead.
+ * 
+ * ```
+ * const carModelYears = ArrayUtils.multiLineSubstring(hardSpacedString, 102);
+ * // ['car_model_year', '--------------', '2003          ', '2005          ', '2004          ', '1993          ', '1989'];
+ * const ipAddresses = ArrayUtils.multiLineSubstring(hardSpacedString, 73, 87);
+ * // ['ip_address    ', '--------------', '81.118.170.238', '255.140.25.31 ', '149.240.166.18', '132.67.225.203', '247.123.242.49'];
+ * ```
+ * @see {@link module:array.multiLineSubstr|multiLineSubstr} - to use character start and length
+ * @see {@link module:array.multiStepReduce|multiStepReduce} - for example on how to extract data from hard spaced arrays
+ * 
+ * @param {String|String[]} str - multi-line string or array of strings
+ * @param {Number} startPosition - the starting index to extract out - using the standard `substring` method
+ * @param {Number} [endPosition] - the ending endex to extract out
+ * @returns {String[]} - substr values from each line
+ **/
+export function multiLineSubstring(
   target: string | string[],
   startPosition: number,
   endPosition?: number
@@ -306,7 +990,103 @@ function multiLineSubstring(
   return lines.map((line) => line.substring(startPosition, endPosition));
 }
 
-function multiStepReduce<T, U>(
+/**
+ * Returns the reduce at each step along the way.
+ * 
+ * For example, if you have a set of column widths
+ * and would like to know how wide the table is after each column.
+ * 
+ * For example:
+ * 
+ * ```
+ * hardSpacedString = '' +
+ * `id first_name last_name  city        email                        gender ip_address      airport_code car_model_year
+ * -- ---------- ---------- ----------- ---------------------------- ------ --------------- ------------ --------------
+ * 1  Thekla     Brokenshaw Chicago     tbrokenshaw0@kickstarter.com Female 81.118.170.238  CXI          2003          
+ * 2  Lexi       Dugall     New York    ldugall1@fc2.com             Female 255.140.25.31   LBH          2005          
+ * 3  Shawna     Burghill   London      sburghill2@scribd.com        Female 149.240.166.189 GBA          2004          
+ * 4  Ginger     Tween      Lainqu      gtween3@wordpress.com        Female 132.67.225.203  EMS          1993          
+ * 5  Elbertina  Setford    Los Angeles esetford4@ted.com            Female 247.123.242.49  MEK          1989          `;
+ * 
+ * columns = [
+ *   'id ',
+ *   'first_name ',
+ *   'last_name  ',
+ *   'city        ',
+ *   'email                        ',
+ *   'gender ',
+ *   'ip_address      ',
+ *   'airport_code ',
+ *   'car_model_year '
+ * ];
+ * columnWidths = columns.map((str) => str.length);
+ * // [ 3, 11, 11, 12, 29, 7, 16, 13, 15 ];
+ * 
+ * //-- get the starting position for each column,
+ * //-- ex: column 3 is sum of columnWidths[0..3] or 0 + 3 + 11 + 11 or 25
+ * columnStops = utils.array.multiStepReduce( columnWidths, (a,b) => a + b, 0);
+ * // [0, 3, 14, 25, 37, 66, 73, 89, 102, 117];
+ * ```
+ * 
+ * We can then pair with the column widths - to get exactly the starting position and width of each column.
+ * 
+ * ```
+ * substrPairs = columnWidths.map((value, index) => [columnStops[index], value]);
+ * // [[0, 3], [3, 11], [14, 11], [25, 12], [37, 29], [66, 7], [73, 16], [89, 13], [102, 15]];
+ * ```
+ * 
+ * Now that we know how the starting positions for each of the columns, we can try picking one column out:
+ * 
+ * ```
+ * //-- we can get a single column like this:
+ * cityStartingCharacter = substrPairs[3][0]; // 25
+ * cityColumnLength = substrPairs[3][1]; // 12
+ * 
+ * cityData = utils.array.multiLineSubstr(hardSpacedString, cityStartingCharacter, cityColumnLength);
+ * // ['city        ', '----------- ', 'Chicago     ', 'New York    ', 'London      ', 'Lainqu      ', 'Los Angeles ']
+ * ```
+ * 
+ * Or we can get all columns with something like this:
+ * 
+ * ```
+ * results = substrPairs.map(
+ *  ([startingPos, length]) => utils.array.multiLineSubstr(hardSpacedString, startingPos, length)
+ * );
+ * 
+ * // [['id ', '-- ', '1  ', '2  ', '3  ', '4  ', '5  '],
+ * // ['first_name ', '---------- ', 'Thekla     ', 'Lexi       ', 'Shawna     ', 'Gin...', ...],
+ * // ['last_name  ', '---------- ', 'Brokenshaw ', 'Dugall     ', 'Burghill   ', 'Twe...', ...],
+ * // ['city        ', '----------- ', 'Chicago     ', 'New York    ', 'London      ', ...],
+ * // ['email                        ', '---------------------------- ', 'tbrokenshaw0...', ...],
+ * // ['gender ', '------ ', 'Female ', 'Female ', 'Female ', 'Female ', 'Female '],
+ * // ['ip_address      ', '--------------- ', '81.118.170.238  ', '255.140.25.31   ', ...],
+ * // ['airport_code ', '------------ ', 'CXI          ', 'LBH          ', 'GBA       ...', ...],
+ * // ['car_model_year', '--------------', '2003          ', '2005          ', '2004  ...', ...]]
+ * ```
+ * 
+ * We can then transpose the array to give us the format we might expect (non DataFrame centric)
+ * 
+ * ```
+ * resultsData = utils.array.transpose(results);
+ * 
+ * utils.table(resultsData).render();
+ * ```
+ * 
+ * 0  |1          |2          |3           |4                            |5      |6               |7            |8             
+ * -- |--         |--         |--          |--                           |--     |--              |--           |--            
+ * id |first_name |last_name  |city        |email                        |gender |ip_address      |airport_code |car_model_year
+ * -- |---------- |---------- |----------- |---------------------------- |------ |--------------- |------------ |--------------
+ * 1  |Thekla     |Brokenshaw |Chicago     |tbrokenshaw0@kickstarter.com |Female |81.118.170.238  |CXI          |2003          
+ * 2  |Lexi       |Dugall     |New York    |ldugall1@fc2.com             |Female |255.140.25.31   |LBH          |2005          
+ * 3  |Shawna     |Burghill   |London      |sburghill2@scribd.com        |Female |149.240.166.189 |GBA          |2004          
+ * 4  |Ginger     |Tween      |Lainqu      |gtween3@wordpress.com        |Female |132.67.225.203  |EMS          |1993          
+ * 5  |Elbertina  |Setford    |Los Angeles |esetford4@ted.com            |Female |247.123.242.49  |MEK          |1989          
+ * 
+ * This can also be helpful with coming up with complex
+ *  {@link module:array.arrange|array.arrange(size, start, step)}
+ * collections.
+ **/
+export function multiStepReduce<T, U>(
   list: U[],
   fn: (acc: T, val: U, index: number, list: U[]) => T,
   initialValue?: T
@@ -320,7 +1100,70 @@ function multiStepReduce<T, U>(
   return results;
 }
 
-function extractFromHardSpacedTable(
+/**
+ * Useful for extracting out hard spaced string arrays separated by newlines
+ * 
+* ```
+ * hardSpacedString = `
+ * id first_name last_name  city        email                        gender ip_address      airport_code car_model_year
+ * -- ---------- ---------- ----------- ---------------------------- ------ --------------- ------------ --------------
+ * 1  Thekla     Brokenshaw Chicago     tbrokenshaw0@kickstarter.com Female 81.118.170.238  CXI          2003          
+ * 2  Lexi       Dugall     New York    ldugall1@fc2.com             Female 255.140.25.31   LBH          2005          
+ * 3  Shawna     Burghill   London      sburghill2@scribd.com        Female 149.240.166.189 GBA          2004          
+ * 4  Ginger     Tween      Lainqu      gtween3@wordpress.com        Female 132.67.225.203  EMS          1993          
+ * 5  Elbertina  Setford    Los Angeles esetford4@ted.com            Female 247.123.242.49  MEK          1989          `;
+ * 
+ * columns = [
+ *   'id ',
+ *   'first_name ',
+ *   'last_name  ',
+ *   'city        ',
+ *   'email                        ',
+ *   'gender ',
+ *   'ip_address      ',
+ *   'airport_code ',
+ *   'car_model_year '
+ * ];
+ * columnWidths = columns.map((str) => str.length);
+ * // [ 3, 11, 11, 12, 29, 7, 16, 13, 15 ];
+ * 
+ * 
+ * results = utils.array.extractFromHardSpacedTable(hardSpacedString, columnWidths);
+ * 
+ * // [['id ', '-- ', '1  ', '2  ', '3  ', '4  ', '5  '],
+ * // ['first_name ', '---------- ', 'Thekla     ', 'Lexi       ', 'Shawna     ', 'Gin...', ...],
+ * // ['last_name  ', '---------- ', 'Brokenshaw ', 'Dugall     ', 'Burghill   ', 'Twe...', ...],
+ * // ['city        ', '----------- ', 'Chicago     ', 'New York    ', 'London      ', ...],
+ * // ['email                        ', '---------------------------- ', 'tbrokenshaw0...', ...],
+ * // ['gender ', '------ ', 'Female ', 'Female ', 'Female ', 'Female ', 'Female '],
+ * // ['ip_address      ', '--------------- ', '81.118.170.238  ', '255.140.25.31   ', ...],
+ * // ['airport_code ', '------------ ', 'CXI          ', 'LBH          ', 'GBA       ...', ...],
+ * // ['car_model_year', '--------------', '2003          ', '2005          ', '2004  ...', ...]]
+ * ```
+ * 
+ * We can then transpose the array to give us the format we might expect (non DataFrame centric)
+ * 
+ * ```
+ * resultsData = utils.array.transpose(results);
+ * 
+ * utils.table(resultsData).render();
+ * ```
+ * 
+ * 0  |1          |2          |3           |4                            |5      |6               |7            |8             
+ * -- |--         |--         |--          |--                           |--     |--              |--           |--            
+ * id |first_name |last_name  |city        |email                        |gender |ip_address      |airport_code |car_model_year
+ * -- |---------- |---------- |----------- |---------------------------- |------ |--------------- |------------ |--------------
+ * 1  |Thekla     |Brokenshaw |Chicago     |tbrokenshaw0@kickstarter.com |Female |81.118.170.238  |CXI          |2003          
+ * 2  |Lexi       |Dugall     |New York    |ldugall1@fc2.com             |Female |255.140.25.31   |LBH          |2005          
+ * 3  |Shawna     |Burghill   |London      |sburghill2@scribd.com        |Female |149.240.166.189 |GBA          |2004          
+ * 4  |Ginger     |Tween      |Lainqu      |gtween3@wordpress.com        |Female |132.67.225.203  |EMS          |1993          
+ * 5  |Elbertina  |Setford    |Los Angeles |esetford4@ted.com            |Female |247.123.242.49  |MEK          |1989          
+ * 
+ * @param {String} str - Markdown / Hard Spaced Strings
+ * @param {Number[]} columnWidths - Array of of the column widths to extract
+ * @returns {String[][]} - Array of Arrays, where each row is an extracted column
+ **/
+export function extractFromHardSpacedTable(
   str: string | string[],
   columnWidths: (number | string)[]
 ): string[][] {
@@ -340,12 +1183,50 @@ function extractFromHardSpacedTable(
   );
 }
 
-/** Iterator that lets you peek ahead without advancing. */
+/**
+ * Create an iterator for an array that allows for peeking next values.
+ * 
+ * ```
+ * source = [0, 1, 2, 3, 4, 5];
+ * 
+ * // also quite helpful for document.querySelector(...)
+ * itr = new utils.array.PeekableArrayIterator(source);
+ * 
+ * console.log(itr.next()); // { done: false, value: 0 }
+ * 
+ * //-- peek without moving the iterator
+ * console.log(itr.peek.next()); // { done: false, value: 1 }
+ * console.log(itr.peek.next()); // { done: false, value: 2 }
+ * console.log(itr.peek.next()); // { done: false, value: 3 }
+ * console.log(itr.peek.next()); // { done: false, value: 4 }
+ * console.log(itr.peek.next()); // { done: true, value: 5 }
+ * 
+ * //-- move the main iterator
+ * console.log(itr.next()); // { done: false, value: 1 }
+ * ```
+ * 
+ * Of course, for each will always work
+ * 
+ * ```
+ * for (let i of new utils.array.PeekableArrayIterator(source)) {
+ *   console.log(i);
+ * }
+ * // 1\n2\n3\n4\n5
+ * ```
+ * 
+ * @see https://www.npmjs.com/package/peekable-array-iterator
+ **/
 export class PeekableArrayIterator<T> implements Iterator<T> {
   array: T[];
   i: number;
   peek!: Generator<T, undefined, unknown>;
 
+  /**
+   * Constructor
+   * 
+   * @param {Iterable} array - something we can iterate over
+   * @param {Number} start - the starting index
+   **/
   constructor(source: Iterable<T>, start = -1) {
     this.array = Array.isArray(source) ? source : [...source];
     this.i = start;
@@ -369,14 +1250,71 @@ export class PeekableArrayIterator<T> implements Iterator<T> {
   }
 }
 
-function delayedFn(fn: (...args: unknown[]) => unknown, ...rest: unknown[]): () => unknown {
+/**
+ * Defines a function and arguments that will only be called,
+ * only when the delayedFunction is called.
+ * 
+ * (Similar to Function.bind - but supports Function.call(1,2,3) or Function.apply([1,2,3]) syntax)
+ * 
+ * Example, these are equivalent, but the delayedFn does not mess with `this`
+ * 
+ * sayFn = (...rest) => console.log(...rest);
+ * arguments = [0, 1, 2, 3, 4, 5];
+ * 
+ * Spy(sayFn);
+ * 
+ * delayedFnA = sayFn.bind(globalThis, arguments);
+ * ...
+ * sayFn.calledCount; // 0
+ * delayedFnA(); // consoles: [0, 1, 2, 3, 4, 5];
+ * sayFn.calledCount; // 1
+ * 
+ * delayedFnB = utils.array.delayedFn(sayFn, 0, 1, 2, 3, 4, 5);
+ * ...
+ * delayedFnB(); // consoles: [0, 1, 2, 3, 4, 5];
+ * 
+ * @param {Function} fn - Function to be executed at a later time
+ * @param  {...any} rest - arguments to be passed to fn
+ * @returns {Function} - function that can be called to execute fn with the arguments
+ * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
+ **/
+export function delayedFn(fn: (...args: unknown[]) => unknown, ...rest: unknown[]): () => unknown {
   return () => {
     const cleanRest = rest.length === 1 && Array.isArray(rest[0]) ? (rest[0] as unknown[]) : rest;
     return fn.apply(undefined, cleanRest);
   };
 }
 
-function chainFunctions(
+/**
+ * Chain a set of functions to be called one after another
+ * (supports functions returning promises)
+ * 
+ * This is especially helpful if calls need to be rate limited to only having 1 occur at a time.
+ * 
+ * The resulting promise will return a list, with each entry corresponding with the row of arguments sent.
+ * 
+ * ```
+ * const sumValues = (...rest) => rest.reduce((result, val) => result + val, 0);
+ * 
+ * const arguments = [
+ *  [1],
+ *  [1, 1],
+ *  [1, 1, 2],
+ *  [1, 1, 2, 3]
+ * ];
+ * 
+ * utils.array.chainFunctions(sumValues, arguments)
+ *  .then((results) => console.log(`fibonnacci numbers: ${results}`));
+ * // fibonacci numbers: [1, 2, 4, 7]
+ * ```
+ * 
+ * @param {Function} fn - the function to be called
+ * @param {Array<any[]>} rows - Array where each row are arguments to be applied to fn
+ * @returns {Promise<any>} - promise that will resolve when the last delayed function finishes
+ * @see {@link https://rxjs.dev/guide/overview|rxjs} if you would like to have more than one active at a time.
+ * @see {@link module:array.asyncWaitAndChain|asyncWaitAndChain} - if you would like a delay between executions
+ **/
+export function chainFunctions(
   fn: (...args: unknown[]) => unknown,
   rows: unknown[][]
 ): Promise<unknown[]> {
@@ -412,7 +1350,16 @@ function chainFunctions(
   });
 }
 
-function asyncWaitThenRun(
+/**
+ * Executes a function with arguments after a few second delay.
+ * 
+ * @param {Number} seconds - number of seconds to wait before calling
+ * @param {Function} fn - Function to call
+ * @param {...any} rest - arguments to send to the function when it is executed. 
+ * @returns {@Promise<any>} - that then executes when the timer is up
+ * @private
+ **/
+export function asyncWaitThenRun(
   seconds: number,
   fn: (...args: unknown[]) => unknown,
   ...rest: unknown[]
@@ -433,7 +1380,36 @@ function asyncWaitThenRun(
   });
 }
 
-function asyncWaitAndChain(
+/**
+ * Similar to chainFunctions - in that only one delayed function will occur at a time,
+ * but adds a delay between calls.
+ * 
+ * This also supports functions returning promises.
+ * 
+ * 
+ * ```
+ * const sumValues = (...rest) => rest.reduce((result, val) => result + val, 0);
+ * 
+ * const arguments = [
+ *  [1],
+ *  [1, 1],
+ *  [1, 1, 2],
+ *  [1, 1, 2, 3]
+ * ];
+ * 
+ * utils.array.asyncWaitAndChain(3, sumValues, arguments)
+ *  .then((results) => console.log(`fibonnacci numbers: ${results}`));
+ * // fibonacci numbers: [1, 2, 4, 7], but took 9 seconds to accomplish
+ * ```
+ * 
+ * @param {Number} seconds - number of seconds to delay between each execution
+ * @param {Function} fn - function to be called for each row of rows
+ * @param {Array<any[]>} rows - Array where each row are arguments to be applied to fn
+ * @returns {Promise<any>} - promise that will resolve when the last delayed function finishes
+ * @see {@link module:array.chainFunctions|chainFunctions} - to execute methods right after each other.
+ * @see {@link https://rxjs.dev/guide/overview|rxjs} if you would like to execute more than one at a time.
+ **/
+export function asyncWaitAndChain(
   seconds: number,
   fn: (...args: unknown[]) => unknown,
   rows: unknown[][]
@@ -463,7 +1439,23 @@ function asyncWaitAndChain(
   });
 }
 
-function resize<T>(
+/**
+ * Resizes an array - if shorter (truncates), if longer cycles values.
+ * 
+ * ```
+ * categoryValues = ['rock', 'paper', 'scissors'];
+ * 
+ * //-- resizes an array to be shorter - truncating
+ * utils.array.resize(categoryValues, 2); // ['rock', 'paper']
+ * 
+ * //-- resizes an array to be longer - filling with undefined
+ * utils.array.resize(categoryValues, 7); // ['rock', 'paper', 'scissors', undefined, undefined, undefined, undefined];
+ * ```
+ * 
+ * @param {Array} sourceList - array of values
+ * @param {Number} length - new length of the list
+ **/
+export function resize<T>(
   sourceList: T[] | null | undefined,
   length: number,
   defaultValue?: T
@@ -479,7 +1471,49 @@ function resize<T>(
   return result;
 }
 
-function zip(
+/**
+ * Combines arrays together by joining the values at the same index.
+ * 
+ * Similar to Panda's zip
+ * 
+ * This can be very helpful for joining multiple value lists.
+ * 
+ * ```
+ * first = ['john', 'paul', 'george', 'ringo'];
+ * last = ['lennon', 'mccartney', 'harrison', 'starr'];
+ * phrase = ['imagine', 'yesterday', 'taxman', 'walrus'];
+ * 
+ * names = utils.array.zip(first, last);
+ * // [['john', 'lennon'], ['paul', 'mccartney'],
+ * //  ['george', 'harrison'], ['ringo', 'starr']];
+ * ```
+ * 
+ * You can also zip together existing arrays
+ * 
+ * ```
+ * utils.array.zip(names, phrase);
+ * // [['john', 'lennon', 'imagine'],
+ * //   ['paul', 'mccartney', 'yesterday'],
+ * //   ['george', 'harrison', 'taxman'],
+ * //   ['ringo', 'starr', 'walrus']]
+ * ```
+ * 
+ * or you can zip them together all at once
+ * 
+ * ```
+ * utils.array.zip(first, last, phrase);
+ * // [['john', 'lennon', 'imagine'],
+ * //   ['paul', 'mccartney', 'yesterday'],
+ * //   ['george', 'harrison', 'taxman'],
+ * //   ['ringo', 'starr', 'walrus']]
+ * ```
+ * 
+ * @param {Array} arrayLeft - one array to combine with the array on the right
+ * @param {Array} arrayRight - another array to combine at the same indices on the left
+ * @param  {...any} rest - additional arrays to combine
+ * @returns {Array<Array>}
+ **/
+export function zip(
   arrayLeft: Iterable<unknown>,
   arrayRight: Iterable<unknown>,
   ...rest: Iterable<unknown>[]
@@ -528,41 +1562,3 @@ function zip(
   }
   return result;
 }
-
-const ArrayUtils = {
-  SORT_ASCENDING,
-  SORT_DESCENDING,
-  createSort,
-  peekFirst,
-  peekLast,
-  pickRows,
-  pickColumns,
-  pick,
-  extract: pick,
-  applyArrayValue,
-  applyArrayValues,
-  size,
-  arrange,
-  arange: arrange,
-  isMultiDimensional,
-  arrayLength2d,
-  transpose,
-  reshape,
-  clone,
-  arrangeMulti,
-  arangeMulti: arrangeMulti,
-  indexify,
-  multiLineSubstr,
-  multiLineSubstring,
-  multiStepReduce,
-  extractFromHardSpacedTable,
-  PeekableArrayIterator,
-  delayedFn,
-  chainFunctions,
-  asyncWaitAndChain,
-  resize,
-  zip,
-};
-
-export { createSort };
-export default ArrayUtils;

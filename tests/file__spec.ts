@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
 import { assertSpyCalls, stub, type Spy } from "@std/testing/mock";
 import { resolve } from "@std/path";
-import FileUtil from "../src/file.ts";
+import * as FileUtil from "../src/file.ts";
 import { FileMock } from "../__testHelper__/FileMock.ts";
 import {
   type ConsoleI,

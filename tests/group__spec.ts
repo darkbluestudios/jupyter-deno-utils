@@ -1,6 +1,6 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import GroupUtils from "../src/group.ts";
+import * as GroupUtils from "../src/group.ts";
 import { SourceMap } from "../src/SourceMap.ts";
 
 // Use Date.UTC so dateTime keys are timezone-independent (ISO midnight)

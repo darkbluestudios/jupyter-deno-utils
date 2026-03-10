@@ -1,11 +1,18 @@
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import SetUtils from "../src/set.ts";
+import {
+  add,
+  union,
+  intersection,
+  remove,
+  difference,
+  findItemsNotContained
+} from "../src/set.ts";
 
 describe("SetUtils", () => {
   it("can add a value to set", () => {
     const source = new Set([1, 2, 3]);
-    const results = SetUtils.add(source, 4, 5);
+    const results = add(source, 4, 5);
     const expected = new Set([1, 2, 3, 4, 5]);
     expect(results).toEqual(expected);
   });
@@ -13,33 +20,33 @@ describe("SetUtils", () => {
   describe("setUnion", () => {
     it("can add a union of sets", () => {
       const source = new Set([1, 2, 3]);
-      const results = SetUtils.union(source, new Set([4, 5]));
+      const results = union(source, new Set([4, 5]));
       const expected = new Set([1, 2, 3, 4, 5]);
       expect(results).toEqual(expected);
     });
     it("can add a union of array", () => {
       const source = new Set([1, 2, 3]);
-      const results = SetUtils.union(source, [4, 5]);
+      const results = union(source, [4, 5]);
       const expected = new Set([1, 2, 3, 4, 5]);
       expect(results).toEqual(expected);
     });
     it("can add an array to an array", () => {
       const source = [1, 2, 3];
-      const results = SetUtils.union(source, [4, 5]);
+      const results = union(source, [4, 5]);
       const expected = new Set([1, 2, 3, 4, 5]);
       expect(results).toEqual(expected);
     });
     it("throws an error if a non-iterable is asked to union", () => {
       const source = new Set([1, 2, 3]);
       expect(() =>
-        SetUtils.union(source, { john: "doe" } as unknown as Iterable<number>)
+        union(source, { john: "doe" } as unknown as Iterable<number>)
       ).toThrow();
     });
     it("adds nothing if the target is null", () => {
       const source = new Set([1, 2, 3]);
       const target = null;
       const expected = new Set(source);
-      const results = SetUtils.union(source, target);
+      const results = union(source, target);
       expect(results).toEqual(expected);
     });
     describe("union multiple sets", () => {
@@ -47,7 +54,7 @@ describe("SetUtils", () => {
         const sourceA = new Set([1, 2, 3]);
         const sourceB = new Set([4, 5, 6]);
         const expected = new Set([1, 2, 3, 4, 5, 6]);
-        const results = SetUtils.union(sourceA, sourceB);
+        const results = union(sourceA, sourceB);
         expect(results).toEqual(expected);
       });
       it("can union three sets", () => {
@@ -55,7 +62,7 @@ describe("SetUtils", () => {
         const sourceB = new Set([4, 5, 6]);
         const sourceC = new Set([7, 8, 9]);
         const expected = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        const results = SetUtils.union(sourceA, sourceB, sourceC);
+        const results = union(sourceA, sourceB, sourceC);
         expect(results).toEqual(expected);
       });
       it("can union three intersecting sets", () => {
@@ -63,7 +70,7 @@ describe("SetUtils", () => {
         const sourceB = new Set([3, 4, 5]);
         const sourceC = new Set([5, 6, 7]);
         const expected = new Set([1, 2, 3, 4, 5, 6, 7]);
-        const results = SetUtils.union(sourceA, sourceB, sourceC);
+        const results = union(sourceA, sourceB, sourceC);
         expect(results).toEqual(expected);
       });
       it("can union four intersecting sets", () => {
@@ -72,7 +79,7 @@ describe("SetUtils", () => {
         const sourceC = new Set([5, 6, 7]);
         const sourceD = new Set([7, 8, 9]);
         const expected = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-        const results = SetUtils.union(sourceA, sourceB, sourceC, sourceD);
+        const results = union(sourceA, sourceB, sourceC, sourceD);
         expect(results).toEqual(expected);
       });
       it("can union a single set and multiple arrays", () => {
@@ -80,7 +87,7 @@ describe("SetUtils", () => {
         const sourceB = [1, 2, 3, 4];
         const sourceC = [5, 6, 7, 8];
         const expected = new Set([1, 2, 3, 4, 5, 6, 7, 8]);
-        const results = SetUtils.union(sourceA, sourceB, sourceC);
+        const results = union(sourceA, sourceB, sourceC);
         expect(results).toEqual(expected);
       });
     });
@@ -91,35 +98,35 @@ describe("SetUtils", () => {
       const sourceA = new Set([1, 2, 3]);
       const sourceB = new Set([3, 4, 5]);
       const expected = new Set([3]);
-      const results = SetUtils.intersection(sourceA, sourceB);
+      const results = intersection(sourceA, sourceB);
       expect(results).toEqual(expected);
     });
     it("can find intersection of set and array", () => {
       const sourceA = new Set([1, 2, 3]);
       const sourceB = [3, 4, 5];
       const expected = new Set([3]);
-      const results = SetUtils.intersection(sourceA, sourceB);
+      const results = intersection(sourceA, sourceB);
       expect(results).toEqual(expected);
     });
     it("can find intersection of array and set", () => {
       const sourceA = [1, 2, 3];
       const sourceB = new Set([3, 4, 5]);
       const expected = new Set([3]);
-      const results = SetUtils.intersection(sourceA, sourceB);
+      const results = intersection(sourceA, sourceB);
       expect(results).toEqual(expected);
     });
     it("can find intersection of array and array", () => {
       const sourceA = [1, 2, 3];
       const sourceB = [3, 4, 5];
       const expected = new Set([3]);
-      const results = SetUtils.intersection(sourceA, sourceB);
+      const results = intersection(sourceA, sourceB);
       expect(results).toEqual(expected);
     });
     it("can find intersection where they do not intersect", () => {
       const sourceA = new Set([1, 2, 3]);
       const sourceB = new Set([4, 5, 6]);
       const expected = new Set<number>([]);
-      const results = SetUtils.intersection(sourceA, sourceB);
+      const results = intersection(sourceA, sourceB);
       expect(results).toEqual(expected);
     });
     describe("intersect multiple sets", () => {
@@ -127,7 +134,7 @@ describe("SetUtils", () => {
         const sourceA = new Set([1, 2, 3]);
         const sourceB = new Set([2, 3, 4]);
         const expected = new Set([2, 3]);
-        const results = SetUtils.intersection(sourceA, sourceB);
+        const results = intersection(sourceA, sourceB);
         expect(results).toEqual(expected);
       });
       it("can intersect three sets", () => {
@@ -135,7 +142,7 @@ describe("SetUtils", () => {
         const sourceB = new Set([2, 3, 4]);
         const sourceC = new Set([3, 4, 5]);
         const expected = new Set([3]);
-        const results = SetUtils.intersection(sourceA, sourceB, sourceC);
+        const results = intersection(sourceA, sourceB, sourceC);
         expect(results).toEqual(expected);
       });
       it("can intersect three unique sets", () => {
@@ -143,7 +150,7 @@ describe("SetUtils", () => {
         const sourceB = new Set([3, 4, 5]);
         const sourceC = new Set([5, 6, 7]);
         const expected = new Set<number>([]);
-        const results = SetUtils.intersection(sourceA, sourceB, sourceC);
+        const results = intersection(sourceA, sourceB, sourceC);
         expect(results).toEqual(expected);
       });
       it("can intersect four intersecting sets", () => {
@@ -152,7 +159,7 @@ describe("SetUtils", () => {
         const sourceC = new Set([1, 4, 9]);
         const sourceD = new Set([4, 5, 9]);
         const expected = new Set([4]);
-        const results = SetUtils.intersection(
+        const results = intersection(
           sourceA,
           sourceB,
           sourceC,
@@ -165,7 +172,7 @@ describe("SetUtils", () => {
         const sourceB = [1, 2, 3, 4];
         const sourceC = [1, 2, 3, 9];
         const expected = new Set([1, 2, 3]);
-        const results = SetUtils.intersection(sourceA, sourceB, sourceC);
+        const results = intersection(sourceA, sourceB, sourceC);
         expect(results).toEqual(expected);
       });
     });
@@ -174,37 +181,37 @@ describe("SetUtils", () => {
   describe("setRemove", () => {
     it("can remove an individual item from a set", () => {
       const source = new Set([1, 2, 3, 4, 5]);
-      const results = SetUtils.remove(source, 4, 5);
+      const results = remove(source, 4, 5);
       const expected = new Set([1, 2, 3]);
       expect(results).toEqual(expected);
     });
     it("can remove a set", () => {
       const source = new Set([1, 2, 3, 4, 5]);
-      const results = SetUtils.difference(source, new Set([4, 5]));
+      const results = difference(source, new Set([4, 5]));
       const expected = new Set([1, 2, 3]);
       expect(results).toEqual(expected);
     });
     it("can remove a list", () => {
       const source = new Set([1, 2, 3, 4, 5]);
-      const results = SetUtils.difference(source, [4, 5]);
+      const results = difference(source, [4, 5]);
       const expected = new Set([1, 2, 3]);
       expect(results).toEqual(expected);
     });
     it("can remove a list from a list", () => {
       const source = [1, 2, 3, 4, 5];
-      const results = SetUtils.difference(source, [4, 5]);
+      const results = difference(source, [4, 5]);
       const expected = new Set([1, 2, 3]);
       expect(results).toEqual(expected);
     });
     it("throws an error if a non-iterable is asked to remove", () => {
       const source = new Set([1, 2, 3]);
-      expect(() => SetUtils.difference(source, 1 as unknown as Iterable<number>)).toThrow();
+      expect(() => difference(source, 1 as unknown as Iterable<number>)).toThrow();
     });
     it("removes nothing is target is null", () => {
       const source = new Set([1, 2, 3]);
       const target = null;
       const expected = new Set(source);
-      const results = SetUtils.difference(source, target);
+      const results = difference(source, target);
       expect(results).toEqual(expected);
     });
   });
@@ -214,42 +221,42 @@ describe("SetUtils", () => {
       const expected = new Set<number>();
       const possibleSuperSet = new Set([1, 2, 3, 4, 5, 6]);
       const subset = new Set([4, 5, 6]);
-      const result = SetUtils.findItemsNotContained(possibleSuperSet, subset);
+      const result = findItemsNotContained(possibleSuperSet, subset);
       expect(result).toEqual(expected);
     });
     it("superset missing one item", () => {
       const expected = new Set([7]);
       const possibleSuperSet = new Set([1, 2, 3, 4, 5, 6]);
       const subset = new Set([4, 5, 6, 7]);
-      const result = SetUtils.findItemsNotContained(possibleSuperSet, subset);
+      const result = findItemsNotContained(possibleSuperSet, subset);
       expect(result).toEqual(expected);
     });
     it("superset missing multiple", () => {
       const expected = new Set([7, 8, 9]);
       const possibleSuperSet = new Set([1, 2, 3, 4, 5, 6]);
       const subset = new Set([4, 5, 6, 7, 8, 9]);
-      const result = SetUtils.findItemsNotContained(possibleSuperSet, subset);
+      const result = findItemsNotContained(possibleSuperSet, subset);
       expect(result).toEqual(expected);
     });
     it("superset disjointed", () => {
       const expected = new Set([4, 5, 6]);
       const possibleSuperSet = new Set([1, 2, 3]);
       const subset = new Set([4, 5, 6]);
-      const result = SetUtils.findItemsNotContained(possibleSuperSet, subset);
+      const result = findItemsNotContained(possibleSuperSet, subset);
       expect(result).toEqual(expected);
     });
     it("identifies missing items in arrays", () => {
       const expected = new Set([7]);
       const possibleSuperSet = [1, 2, 3, 4, 5, 6];
       const subset = [4, 5, 6, 7];
-      const result = SetUtils.findItemsNotContained(possibleSuperSet, subset);
+      const result = findItemsNotContained(possibleSuperSet, subset);
       expect(result).toEqual(expected);
     });
     it("finds nothing if not an iteratable", () => {
       const expected = new Set<number>();
       const possibleSuperSet = [1, 2, 3, 4, 5, 6];
       const subset = null;
-      const result = SetUtils.findItemsNotContained(possibleSuperSet, subset);
+      const result = findItemsNotContained(possibleSuperSet, subset);
       expect(result).toEqual(expected);
     });
   });
