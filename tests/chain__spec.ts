@@ -125,7 +125,19 @@ describe('chain', () => {
     it('can get the value from the symbol', () => {
       const initialValue = 2;
       const expected = ({
-        'text/plain': initialValue
+        'text/plain': '2'
+      });
+
+      // @see https://stackoverflow.com/questions/57086672/element-implicitly-has-an-any-type-because-expression-of-type-string-cant-b
+      // @ts-ignore: symbols
+      const result:any = chain(initialValue)[Symbol.for('Jupyter.display')](); 
+
+      expect(result).toStrictEqual(expected);
+    });
+    it('can get the value from the symbol as a string', () => {
+      const initialValue = 'cuca';
+      const expected = ({
+        'text/plain': '"cuca"'
       });
 
       // @see https://stackoverflow.com/questions/57086672/element-implicitly-has-an-any-type-because-expression-of-type-string-cant-b
@@ -730,6 +742,127 @@ describe('chain', () => {
       const expected = 4;
       const result = chain(initialValue).replace(expected).close();
       expect(result).toStrictEqual(expected);
+    });
+  });
+
+  describe('comment', () => {
+    let consoleMock:ConsoleI;
+
+    beforeEach(() => {
+      consoleMock = mockConsole();
+    });
+    afterEach(() => {
+      removeConsoleMock();
+    });
+    it('can detect console', () => {
+      console.log('test');
+
+      assertSpyCalls(consoleMock.log, 1);
+    });
+    it('can detect it not being called', () => {
+      assertSpyCalls(consoleMock.log, 0);
+    });
+
+    describe('can comment a single string message', () => {
+      it('can comment a single message and gets the value back', () => {
+        const value = 3;
+        const commentMessage = 'comment message';
+        const results = chain(value)
+          .comment(commentMessage)
+          .close()
+        expect(results).toBe(value);
+      });
+      it('can debug a value', () => {
+        const value = 3;
+        const commentMessage = 'comment message';
+        const results = chain(value)
+          .comment(commentMessage)
+          .close()
+        expect(results).toBe(value);
+        // expect(console.log).toHaveBeenCalled();
+        // expect(console.log.mock.calls[0][0]).toBe(6);
+
+        assertSpyCalls(consoleMock.log, 1);
+        assertSpyCall(consoleMock.log, 0, ({ args: [commentMessage]}));
+      });
+      it('can debug a value and ask for debug', () => {
+        const value = 3;
+        const commentMessage = 'comment message';
+        const results = chain(value)
+          .comment(commentMessage, true)
+          .close()
+        expect(results).toBe(value);
+        // expect(console.log).toHaveBeenCalled();
+        // expect(console.log.mock.calls[0][0]).toBe(6);
+
+        assertSpyCalls(consoleMock.log, 2);
+        assertSpyCall(consoleMock.log, 0, ({ args: [commentMessage]}));
+        assertSpyCall(consoleMock.log, 1, ({ args: [3]}));
+      });
+      it('can debug a value and NOT ask for debug', () => {
+        const value = 3;
+        const commentMessage = 'comment message';
+        const results = chain(value)
+          .comment(commentMessage, false)
+          .close()
+        expect(results).toBe(value);
+        // expect(console.log).toHaveBeenCalled();
+        // expect(console.log.mock.calls[0][0]).toBe(6);
+
+        assertSpyCalls(consoleMock.log, 1);
+        assertSpyCall(consoleMock.log, 0, ({ args: [commentMessage]}));
+      });
+    });
+
+    describe('can comment a function', () => {
+      it('can comment a function and gets the value back', () => {
+        const value = 3;
+        const commentMessage = (val) => `value is: ${val}`;
+        const results = chain(value)
+          .comment(commentMessage)
+          .close()
+        expect(results).toBe(value);
+      });
+      it('can debug a value', () => {
+        const value = 3;
+        const commentMessage = (val) => `value is: ${val}`;
+        const results = chain(value)
+          .comment(commentMessage)
+          .close()
+        expect(results).toBe(value);
+        // expect(console.log).toHaveBeenCalled();
+        // expect(console.log.mock.calls[0][0]).toBe(6);
+
+        assertSpyCalls(consoleMock.log, 1);
+        assertSpyCall(consoleMock.log, 0, ({ args: [`value is: 3`]}));
+      });
+      it('can debug a value and ask for debug', () => {
+        const value = 3;
+        const commentMessage = (val) => `value is: ${val}`;
+        const results = chain(value)
+          .comment(commentMessage, true)
+          .close()
+        expect(results).toBe(value);
+        // expect(console.log).toHaveBeenCalled();
+        // expect(console.log.mock.calls[0][0]).toBe(6);
+
+        assertSpyCalls(consoleMock.log, 2);
+        assertSpyCall(consoleMock.log, 0, ({ args: [`value is: 3`]}));
+        assertSpyCall(consoleMock.log, 1, ({ args: [3]}));
+      });
+      it('can debug a value and NOT ask for debug', () => {
+        const value = 3;
+        const commentMessage = (val) => `value is: ${val}`;
+        const results = chain(value)
+          .comment(commentMessage, false)
+          .close()
+        expect(results).toBe(value);
+        // expect(console.log).toHaveBeenCalled();
+        // expect(console.log.mock.calls[0][0]).toBe(6);
+
+        assertSpyCalls(consoleMock.log, 1);
+        assertSpyCall(consoleMock.log, 0, ({ args: [`value is: 3`]}));
+      });
     });
   });
 });

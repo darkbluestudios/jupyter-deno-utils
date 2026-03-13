@@ -571,7 +571,7 @@ describe("FileUtil", () => {
 
   describe("useCache", () => {
     describe("readJSON", () => {
-      it("reads a json with a resolved path", () => {
+      it("reads a json with a resolved path", async () => {
         const shouldWrite = false;
         const cachePath = "./tmp";
         const cacheFile = "sampleFile";
@@ -581,7 +581,7 @@ describe("FileUtil", () => {
         readTextFileSyncReturn = JSON.stringify({ success: true });
 
         const expected = { success: true };
-        const results = FileUtil.useCache(
+        const results = await FileUtil.useCache(
           shouldWrite,
           cachePath,
           cacheFile,
@@ -590,7 +590,7 @@ describe("FileUtil", () => {
 
         expect(results).toStrictEqual(expected);
       });
-      it("reads a json with a date in it", () => {
+      it("reads a json with a date in it", async () => {
         const shouldWrite = false;
         const cachePath = "./tmp";
         const cacheFile = "sampleFile";
@@ -611,7 +611,7 @@ describe("FileUtil", () => {
         readTextFileSyncReturn = JSON.stringify(parsedJSON);
 
         const expected = data;
-        const results = FileUtil.useCache(
+        const results = await FileUtil.useCache(
           shouldWrite,
           cachePath,
           cacheFile,
@@ -622,7 +622,7 @@ describe("FileUtil", () => {
       });
     });
     describe("writeJSON", () => {
-      it("writes to the cache", () => {
+      it("writes to the cache", async () => {
         const shouldWrite = true;
         const cachePath = "./tmp";
         const cacheFile = "sampleFile";
@@ -632,7 +632,7 @@ describe("FileUtil", () => {
         const expensiveResultsStr = JSON.stringify(expensiveResults, null, 2);
         const expensiveFn = () => expensiveResults;
 
-        const cacheResults = FileUtil.useCache(
+        const cacheResults = await FileUtil.useCache(
           shouldWrite,
           cachePath,
           cacheFile,
@@ -644,7 +644,7 @@ describe("FileUtil", () => {
         const result = writeTextFileSyncStub.calls[0].args[1];
         expect(result).toBe(expensiveResultsStr);
       });
-      it("writes to the cache without a trailing slash", () => {
+      it("writes to the cache without a trailing slash", async () => {
         const shouldWrite = true;
         const cachePath = "./tmp";
         const cacheFile = "sampleFile";
@@ -654,7 +654,7 @@ describe("FileUtil", () => {
         const expensiveResultsStr = JSON.stringify(expensiveResults, null, 2);
         const expensiveFn = () => expensiveResults;
 
-        const cacheResults = FileUtil.useCache(
+        const cacheResults = await FileUtil.useCache(
           shouldWrite,
           cachePath,
           cacheFile,
@@ -665,7 +665,7 @@ describe("FileUtil", () => {
         const result = writeTextFileSyncStub.calls[0].args[1];
         expect(result).toBe(expensiveResultsStr);
       });
-      it("writes to the cache with a trailing slash", () => {
+      it("writes to the cache with a trailing slash", async () => {
         const shouldWrite = true;
         const cachePath = "./";
         const cacheFile = "sampleFile";
@@ -675,7 +675,7 @@ describe("FileUtil", () => {
         const expensiveResultsStr = JSON.stringify(expensiveResults, null, 2);
         const expensiveFn = () => expensiveResults;
 
-        const cacheResults = FileUtil.useCache(
+        const cacheResults = await FileUtil.useCache(
           shouldWrite,
           cachePath,
           cacheFile,

@@ -562,13 +562,13 @@ export function cacheDeserializer(key: string, value: unknown): unknown {
  * @see {@link writeJSON} - writes to a JSON file
  * @see ijs.useCache - similar idea - but supports promises
  */
-export function useCache<T>(
+export async function useCache<T>(
   shouldWrite: boolean,
   cachePath: string,
   cacheFile: string,
   expensiveFn: () => T,
   fsOptions: ReadOptions & WriteOptions | null = null,
-): T {
+): Promise<T> {
   const ensureEndsWithSlash = (str: string) =>
     str.endsWith("/") ? str : `${str}/`;
   const cacheFilePath = `${ensureEndsWithSlash(cachePath)}${cacheFile}`;
@@ -577,11 +577,11 @@ export function useCache<T>(
   if (cacheExists && !shouldWrite) {
     const cleanOptions = { ...(fsOptions ?? {}), reviver: cacheDeserializer };
     const results = readJSON(cacheFilePath, cleanOptions);
-    return results as T;
+    return Promise.resolve(results) as Promise<T>;
   }
 
-  const results = expensiveFn();
+  const results = await expensiveFn();
   writeJSON(cacheFilePath, results, fsOptions ?? {});
-  return results;
+  return Promise.resolve(results) as Promise<T>;
 }
 

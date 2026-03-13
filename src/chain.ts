@@ -34,6 +34,7 @@ import type { JupyterRichContent } from "./types/jupyter.ts";
  * There may be times you want to run side effects, or replace the value entirely. (This isn't common, but may be useful on occasion)
  * 
  * * {@link ChainContainer#debug|.debug()} - continues with the current value, but executes a console.log first
+ * * {@link ChainContainer#comment|.comment()} - logs out a message (possibly including the current value) before continuing as normal
  * * {@link ChainContainer#execute|.execute(function)} - where it calls a function, but doesn't pass on the result.
  *        <br /> (This is useful for side-effects, like writing to files)
  * * {@link ChainContainer#replace|.replace(value)} - replaces the value in the chain with a literal value,
@@ -737,6 +738,48 @@ export class ChainContainer {
     return this.update(Array.from(this.value));
   }
 
+  /**
+   * Console a specific message at this point in time, regardless of value.
+   * 
+   * This is very helpful for debugging.
+   * 
+   * @param message {String|(val) => string} - the message to output or a function that returns a string to be commented
+   * @param [debugValueAfter=false] {boolean} - whether to debug the value afterwards
+   * @example
+   * 
+   * ```
+   * const double = (val:number) => number * 2;
+   * new Chain(2)
+   *    .comment('before doing anything')
+   *    .debug()
+   * 
+   *    .chain(double)
+   *    .comment('doubling the value', true)
+   *    // .debug() -- debug not needed, because true was passed
+   * 
+   *    .chain(double)
+   *    .comment((val) => `doubled yet again: ${val}`)
+   * 
+   *    .close()
+   * // before doing anything
+   * // 2
+   * // doubling the value
+   * // 4
+   * // doubled yet again: 8
+   * // (return value is 8)
+   */
+  comment(message: ((any) => string) | string, debugValueAfter = false): ChainContainer {
+    const messageType = typeof message;
+    if (messageType === 'string') {
+      this.console(message);
+    } else if (messageType === 'function') {
+      const messageFn = message as (any) => string;
+      this.console(messageFn(this.value));
+    }
+    if(debugValueAfter) this.debug();
+    return this;
+  }
+
   //-- private methods
 
   /**
@@ -809,7 +852,7 @@ export class ChainContainer {
   [Symbol.for("Jupyter.display")]():JupyterRichContent {
     return ({
       // Plain text content
-      "text/plain": this.value
+      "text/plain": JSON.stringify(this.value)
     });
   }
 }
