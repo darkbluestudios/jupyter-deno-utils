@@ -54,6 +54,17 @@ export const renderMimeObject = (mimeObject: JupyterRichContent): JupyterRenderO
 export const markdown = (markdownText:string): JupyterRenderObject => renderMimeType('text/markdown', markdownText);
 
 /**
+ * Renders html text
+ * 
+ * @param htmlText {string} - html text to be rendered out
+ * @returns {JupyterRenderObject}
+ * @example
+ * JupyterUtils.html(`<h1>heading 1</h1>
+ * This is your text`);
+ */
+export const html = (htmlText:string): JupyterRenderObject => renderMimeType('text/html', htmlText);
+
+/**
  * Renders both plain text and html text
  * 
  * @param plainText {string} - plain text to be rendered out

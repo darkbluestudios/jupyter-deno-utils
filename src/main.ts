@@ -15,8 +15,8 @@ import * as _Jupyter from './jupyter.ts';
 import * as _Object from './object.ts';
 import _PlantUML from './plantuml.ts';
 import * as _Set from './set.ts';
-import _Table from './TableGenerator.ts';
-import { newTable as _newTable } from './TableGenerator.ts';
+import _TableGenerator from './TableGenerator.ts';
+import { table as _newTable } from './TableGenerator.ts';
 
 /**
  * Root module for the application.
@@ -136,14 +136,13 @@ export const set = _Set;
  * Convenience function for creating a table.
  * @see {@link module:table|table}
  */
-export const table = _Table;
+export const TableGenerator = _TableGenerator;
 
 /**
  * Library for converting data to and from tables.
  * @see {@link module:TableGenerator|tableGenerator}
  */
-export const TableGenerator = _Table;
-export const newTable = _newTable;
+export const table = _newTable;
 
 // Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
 // deno-coverage-ignore-start

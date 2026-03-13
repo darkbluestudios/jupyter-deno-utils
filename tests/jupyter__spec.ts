@@ -54,6 +54,20 @@ describe('JupyterUtils', () => {
       expect(resultType).toBe(expected);
     });
   });
+  describe('markdown', () => {
+    it('can render a markdown string', () => {
+      const htmlText = '<h1>Hello, world!</h1>';
+      const result = JupyterUtils.html(htmlText);
+
+      const symbol = JupyterDisplaySymbol;
+      const resultObj = result[symbol]();
+
+      const resultType = resultObj['text/html'];
+      const expected = htmlText
+
+      expect(resultType).toBe(expected);
+    });
+  });
   describe('richText', () => {
     it('can render both strings', () => {
       const plainText = 'plain text';

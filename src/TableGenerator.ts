@@ -5,19 +5,14 @@
 import * as FormatUtils from "./format.ts";
 import * as ObjectUtils from "./object.ts";
 import * as ArrayUtils from "./array.ts";
-import type { JupyterDisplayContext } from "./types/jupyter.ts";
+import * as jupyter from './jupyter.ts';
+import type { JupyterRenderObject } from "./types/jupyter.ts";
 
 const printValue = FormatUtils.printValue;
 
-const JUPYTER_DISPLAY = Symbol.for("Jupyter.display");
-const CONTEXT = {
-  renderSymbol(mimeType: string, value: unknown) {
-    return {
-      [JUPYTER_DISPLAY]() {
-        const obj: Record<string, unknown> = {};
-        obj[mimeType] = value;
-      }
-    };
+export const CONTEXT = {
+  renderSymbol(mimeType: string, value: string) {
+    return jupyter.renderMimeType(mimeType, value);
   },
   console(msg: unknown) {
     const g = typeof globalThis !== "undefined" ? (globalThis as unknown as { console?: { log?: (m: unknown) => void } }) : null;
@@ -25,10 +20,10 @@ const CONTEXT = {
     if (c && typeof c.log === "function") c.log(msg);
   },
   html(htmlText: string) {
-    return CONTEXT.renderSymbol("text/html", htmlText);
+    return jupyter.html(htmlText);
   },
   markdown(markdownText: string) {
-    return CONTEXT.renderSymbol("text/markdown", markdownText);
+    return jupyter.markdown(markdownText);
   }
 };
 
@@ -754,25 +749,18 @@ class TableGenerator {
    * Renders the HTML table in the cell results (Jupyter). Uses sticky headers.
    * @see generateHTML
    */
-  render(): void {
-    const g = globalThis as unknown as {
-      context?: JupyterDisplayContext;
-      $$?: JupyterDisplayContext;
-    };
-    const ctx = g.context ?? g.$$;
-    if (!ctx?.html) {
-      throw new Error("TableGenerator.render() requires a Jupyter display context (global context or $$) with .html()");
-    }
+  render(): JupyterRenderObject {
+    const ctx = CONTEXT;
     const stickyCss = `<span class="sticky-table-marker" ></span>
 <style type='text/css'>
 .sticky-table table { text-align: left; position: relative; border-collapse: collapse; }
 .sticky-table td { border: 1px solid #cccccc; }
 .sticky-table th { background: #676c87; color: white; position: sticky; top: 0; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); }
 </style>
-`;
+`
     const inlineCss = stickyCss;
     TableGenerator.hasRenderedCSS = true;
-    ctx.html(
+    return ctx.html(
       `${inlineCss}<div class="sticky-table" style="max-height: ${this.#height}">\n${this.generateHTML()}\n</div>`
     );
   }
@@ -805,6 +793,6 @@ class TableGenerator {
 export default TableGenerator;
 
 /** Shorthand: utils.table(data) is same as new TableGenerator(data) */
-export const newTable = function table(data?: Record<string, unknown>[] | Record<string, unknown[]> | null): TableGenerator {
+export function table(data?: Record<string, unknown>[] | Record<string, unknown[]> | null): TableGenerator {
   return new TableGenerator(data);
 }

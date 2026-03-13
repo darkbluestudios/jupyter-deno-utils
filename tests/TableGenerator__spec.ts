@@ -3,7 +3,7 @@ import { expect } from "@std/expect";
 import { assertSpyCalls, spy, type Spy } from "@std/testing/mock";
 import * as ArrayUtils from "../src/array.ts";
 import TableGenerator from "../src/TableGenerator.ts";
-import { newTable as _newTable } from '../src/TableGenerator.ts';
+import { table as _newTable, CONTEXT } from '../src/TableGenerator.ts';
 
 type WeatherRow = { id: number; city: string; month: string; precip: number };
 
@@ -2476,19 +2476,19 @@ state|IL   |IL    `;
       (globalThis as unknown as { console: unknown }).console = OLD_CONSOLE;
     });
     describe("render", () => {
+      let htmlSpy:Spy;
+      beforeEach(() => {
+        htmlSpy = spy(CONTEXT, 'html');
+      });
+      afterEach(()=> {
+        htmlSpy.restore();
+      });
       it("has ijs context by default", () => {
         expect((globalThis as unknown as { $$?: { html: unknown } }).$$).toBeTruthy();
         expect((globalThis as unknown as { $$?: { html: unknown } }).$$?.html).toBeTruthy();
       });
-      it("throws an error if not in IJS", () => {
-        delete (globalThis as unknown as { $$?: unknown }).$$;
-        const data = initializeSmallWeather();
-        const instance = new TableGenerator(data);
-        
-        expect(() => instance.render()).toThrow();
-      });
       it('can render a table with a default height', () => {
-        const htmlSpy = spy((globalThis as { $$?: { html: (s: string) => void } }).$$!, "html");
+        //-- htmlSpy from beforeAll
         const data = initializeSmallWeather();
         new TableGenerator(data)
           .render();
@@ -2501,7 +2501,7 @@ state|IL   |IL    `;
         expect(results).toContain('<div class="sticky-table" style="max-height: 50vh">');
       });
       it('can render a table with a custom 50px height', () => {
-        const htmlSpy = spy((globalThis as { $$?: { html: (s: string) => void } }).$$!, "html");
+        //-- htmlSpy from beforeAll
         const data = initializeSmallWeather();
         new TableGenerator(data)
           .height('50px')
@@ -2515,7 +2515,7 @@ state|IL   |IL    `;
         expect(results).toContain('<div class="sticky-table" style="max-height: 50px">');
       });
       it('can render a table with a custom 100vh height', () => {
-        const htmlSpy = spy((globalThis as { $$?: { html: (s: string) => void } }).$$!, "html");
+        //-- htmlSpy from beforeAll
         const data = initializeSmallWeather();
         new TableGenerator(data)
           .height('100vh')
@@ -2529,7 +2529,7 @@ state|IL   |IL    `;
         expect(results).toContain('<div class="sticky-table" style="max-height: 100vh">');
       });
       it('can render a result without error', () => {
-        const htmlSpy = spy((globalThis as { $$?: { html: (s: string) => void } }).$$!, "html");
+        //-- htmlSpy from beforeAll
         const data = initializeSmallWeather();
         new TableGenerator(data)
           .render();
