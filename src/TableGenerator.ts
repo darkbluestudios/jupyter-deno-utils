@@ -10,7 +10,14 @@ import { type JupyterRenderObject, type JupyterRichContent, JupyterDisplaySymbol
 
 const printValue = FormatUtils.printValue;
 
-export const CONTEXT = {
+export interface ContextObj {
+  renderSymbol(mimeType:string, value:string): JupyterRenderObject;
+  console(msg:string):void;
+  html(htmlText:string):JupyterRenderObject;
+  markdown(markdownText:string):JupyterRenderObject;
+}
+
+export const CONTEXT:ContextObj = {
   renderSymbol(mimeType: string, value: string) {
     return jupyter.renderMimeType(mimeType, value);
   },

@@ -1,7 +1,26 @@
 {
   "name": "@darkbluestudios/jupyter-deno-utils",
-  "version": "1.5.0",
-  "exports": "./src/main.ts",
+  "version": "1.6.0",
+  "exports": {
+  	".": "./src/main.ts",
+  	"./aggregate": "./src/aggregate.ts",
+  	"./array": "./src/array.ts",
+  	"./base64": "./src/base64.ts",
+  	"./chain": "./src/chain.ts",
+  	"./color": "./src/color.ts",
+  	"./date": "./src/date.ts",
+  	"./describe": "./src/describe.ts",
+  	"./file": "./src/file.ts",
+  	"./format": "./src/format.ts",
+  	"./group": "./src/group.ts",
+  	"./hashMap": "./src/hashMap.ts",
+  	"./importFresh": "./src/importFresh.ts",
+  	"./jupyter": "./src/jupyter.ts",
+  	"./object": "./src/object.ts",
+  	"./set": "./src/set.ts",
+  	"./SourceMap": "./src/SourceMap.ts",
+  	"./TableGenerator": "./src/TableGenerator.ts"
+  },
   "license": "MIT",
   "compilerOptions": { "noImplicitAny": false },
   "tasks": {
