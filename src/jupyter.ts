@@ -1,5 +1,6 @@
 import { type JupyterRichContent, JupyterDisplaySymbol, type JupyterRenderObject } from "./types/jupyter.ts";
 
+export const JupyterSymbol = JupyterDisplaySymbol;
 
 /**
  * Utilities specifically for working with deno within jupyter.

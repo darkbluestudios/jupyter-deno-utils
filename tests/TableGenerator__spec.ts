@@ -4,6 +4,7 @@ import { assertSpyCalls, spy, type Spy } from "@std/testing/mock";
 import * as ArrayUtils from "../src/array.ts";
 import TableGenerator from "../src/TableGenerator.ts";
 import { table as _newTable, CONTEXT } from '../src/TableGenerator.ts';
+import { JupyterSymbol } from "../src/jupyter.ts";
 
 type WeatherRow = { id: number; city: string; month: string; precip: number };
 
@@ -2567,6 +2568,39 @@ state|IL   |IL    `;
         // FileUtil.writeFileStd('./tmp/tmp', results);
 
         expect(results).toBe(expected);
+      });
+    });
+
+    describe('jupyter-symbol', () => {
+      it('symbol is a method', () => {
+        const data = initializeSmallWeather();
+        const t = new TableGenerator(data);
+
+        const symbol = JupyterSymbol;
+        const resultObj = t[symbol]();
+
+        expect(resultObj).not.toBeNull();
+      });
+      it('symbol is a method that returns an object', () => {
+        const data = initializeSmallWeather();
+        const t = new TableGenerator(data);
+
+        const symbol = JupyterSymbol;
+        const resultObj = t[symbol]();
+
+        expect(resultObj).not.toBeNull();
+        expect(typeof resultObj).toBe('object');
+      });
+      it('to have an text/html mimetype', () => {
+        const data = initializeSmallWeather();
+        const t = new TableGenerator(data);
+
+        const symbol = JupyterSymbol;
+        const resultObj = t[symbol]();
+
+        expect(resultObj).not.toBeNull();
+        expect(typeof resultObj).toBe('object');
+        expect(typeof resultObj['text/html']).toBe('string');
       });
     });
 

@@ -6,7 +6,7 @@ import * as FormatUtils from "./format.ts";
 import * as ObjectUtils from "./object.ts";
 import * as ArrayUtils from "./array.ts";
 import * as jupyter from './jupyter.ts';
-import type { JupyterRenderObject } from "./types/jupyter.ts";
+import { type JupyterRenderObject, type JupyterRichContent, JupyterDisplaySymbol } from "./types/jupyter.ts";
 
 const printValue = FormatUtils.printValue;
 
@@ -787,6 +787,11 @@ class TableGenerator {
    */
   renderTSV(): void {
     CONTEXT.console(this.generateTSV());
+  }
+
+  [JupyterDisplaySymbol](): JupyterRichContent {
+    const result = this.render();
+    return result[JupyterDisplaySymbol]();
   }
 }
 
