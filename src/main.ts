@@ -1,5 +1,5 @@
 // import _importFresh from './importFresh.ts';
-import { importFresh2 } from './importFresh.ts';
+// import { importFresh2 } from './importFresh.ts';
 import * as _Aggregate from './aggregate.ts';
 import * as _ArrayUtils from './array.ts';
 import _Base64 from './base64.ts';
@@ -17,6 +17,9 @@ import _PlantUML from './plantuml.ts';
 import * as _Set from './set.ts';
 import _TableGenerator from './TableGenerator.ts';
 import { table as _newTable } from './TableGenerator.ts';
+
+// alternative option:
+// export { importFresh2 as importFresh } from './importFresh.ts';
 
 /**
  * Root module for the application.
@@ -106,7 +109,7 @@ export const hashMap = _HashMap;
  * Library for working with local modules (and bypassing the cache)
  * @see {@link module:importFresh|importFresh}
  */
-export const importFresh = importFresh2;
+export { importFresh2 as importFresh } from './importFresh.ts';
 
 /**
  * Rendersing within jupyter for deno
