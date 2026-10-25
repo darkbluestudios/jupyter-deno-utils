@@ -988,9 +988,6 @@ export class ChainContainer {
  * I know the kings of England, and I quote the fights|51    
  * Historical                                         |10    
  * From Marathon to Waterloo, in order categorical    |47    
- * 
- * @exports chain
- * @module chain
  */
 export default function chain(value:any):ChainContainer {
   return new ChainContainer(value);

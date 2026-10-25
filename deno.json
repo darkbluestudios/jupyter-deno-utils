@@ -17,6 +17,7 @@
   	"./importFresh": "./src/importFresh.ts",
   	"./jupyter": "./src/jupyter.ts",
   	"./object": "./src/object.ts",
+  	"./plantuml": "./src/plantuml.ts",
   	"./set": "./src/set.ts",
   	"./SourceMap": "./src/SourceMap.ts",
   	"./TableGenerator": "./src/TableGenerator.ts"

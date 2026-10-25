@@ -128,7 +128,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 /**
  * PlantUML controller - manages protocol, host, format defaults and rendering.
  */
-class PlantUMLController {
+export class PlantUMLController {
   /** The protocol used to access the PlantUML results (default: 'http://') */
   protocol: string = "http://";
   /** The host domain of the PlantUML server (default: 'localhost:8080') */

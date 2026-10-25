@@ -1,23 +1,3 @@
-// import _importFresh from './importFresh.ts';
-import { importFresh2 } from './importFresh.ts';
-import * as _Aggregate from './aggregate.ts';
-import * as _ArrayUtils from './array.ts';
-import _Base64 from './base64.ts';
-import _chain from './chain.ts';
-import * as _Color from './color.ts';
-import * as _Describe from './describe.ts';
-import * as _Date from './date.ts';
-import * as _File from './file.ts';
-import * as _Format from './format.ts';
-import * as _Group from './group.ts';
-import * as _HashMap from './hashMap.ts';
-import * as _Jupyter from './jupyter.ts';
-import * as _Object from './object.ts';
-import _PlantUML from './plantuml.ts';
-import * as _Set from './set.ts';
-import _TableGenerator from './TableGenerator.ts';
-import { table as _newTable } from './TableGenerator.ts';
-
 /**
  * Root module for the application.
  * 
@@ -28,121 +8,104 @@ import { table as _newTable } from './TableGenerator.ts';
 
 /**
  * Library for aggregating values from a collection.
- * @see {@link module:aggregate|aggregate}
- * @see {@link }
  */
-export const aggregate = _Aggregate;
+export * as aggregate from "./aggregate.ts";
 
-export const agg = _Aggregate;
+/**
+ * Alias for {@link aggregate}.
+ */
+export * as agg from "./aggregate.ts";
 
 /**
  * Library for working with arrays.
- * @see {@link module:array|array}
  */
-export const array = _ArrayUtils;
+export * as array from "./array.ts";
 
 /**
  * Library for working with base64 strings.
- * @see {@link module:base64|base64}
  */
-export const base64 = _Base64;
+export * as base64 from "./base64.ts";
 
 /**
  * Library for chaining functions.
- * @see {@link module:chain|chain}
  */
-export const chain = _chain;
+export { default as chain } from "./chain.ts";
 
 /**
  * Library for working with colors.
- * @see {@link module:color|color}
  */
-export const color = _Color;
+export * as color from "./color.ts";
 
 /**
  * Library for working with dates.
- * @see {@link module:date|date}
  */
-export const date = _Date;
+export * as date from "./date.ts";
 
 /**
  * Library for describing data and objects.
- * @see {@link module:describe|describe}
  */
-export const describe = _Describe;
+export * as describe from "./describe.ts";
 
 /**
  * Library for working with date ranges.
- * @see {@link module:date.DateRange|date.DateRange}
  */
-export const DateRange = _Date.DateRange;
-
+export { DateRange } from "./date.ts";
 
 /**
  * Library for working with files.
- * @see {@link module:file|file}
  */
-export const file = _File;
+export * as file from "./file.ts";
 
 /**
  * Library for working with formatting values.
- * @see {@link module:format|format}
  */
-export const format = _Format;
+export * as format from "./format.ts";
 
 /**
  * Library for working with groups of values.
- * @see {@link module:group|group}
  */
-export const group = _Group;
+export * as group from "./group.ts";
 
 /**
  * Library for working with hash maps.
- * @see {@link module:hashMap|hashMap}
  */
-export const hashMap = _HashMap;
+export * as hashMap from "./hashMap.ts";
 
 /**
  * Library for working with local modules (and bypassing the cache)
- * @see {@link module:importFresh|importFresh}
  */
-export const importFresh = importFresh2;
+export { importFresh2 as importFresh } from "./importFresh.ts";
 
 /**
  * Rendersing within jupyter for deno
- * @see {@link module:jupyter|jupyter}
  */
-export const jupyter = _Jupyter;
+export * as jupyter from "./jupyter.ts";
 
 /**
  * Library for working with and manipulating objects.
- * @see {@link module:object|object}
  */
-export const object = _Object;
+export * as object from "./object.ts";
 
 /**
  * Library for working with plantuml.
- * @see {@link module:plantuml|plantuml}
+ * The exported value is a {@link PlantUMLController} singleton.
  */
-export const plantUML = _PlantUML;
+export { default as plantuml, PlantUMLController } from "./plantuml.ts";
 
 /**
  * Library for working with sets.
- * @see {@link module:set|set}
  */
-export const set = _Set;
+export * as set from "./set.ts";
 
 /**
  * Convenience function for creating a table.
- * @see {@link module:table|table}
  */
-export const TableGenerator = _TableGenerator;
+export { default as TableGenerator } from "./TableGenerator.ts";
 
 /**
  * Library for converting data to and from tables.
- * @see {@link module:TableGenerator|tableGenerator}
  */
-export const table = _newTable;
+export { table } from "./TableGenerator.ts";
 
 // Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
 // deno-coverage-ignore-start
