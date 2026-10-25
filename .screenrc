@@ -1,108 +1,77 @@
-#!/bin/bash
+source ~/.screenrc
 
 # sets the current window's name
-# screen -X sessionname "denoUtils"
-screen -X title "notebooks"
-screen -X stuff "cd ../^M"
-screen -X number 0
-# screen -X sessionname "denoUtils"
+# sessionname denoUtils
 
-screen -t "denoUtils"
 
-# screen -t "docker"
-# sleep 1
-# screen -p docker -X stuff "cd ../docker_jupyter-ijavascript-utils^M"
-# sleep 1
-screen -t "scratchpad"
-sleep 1
-screen -p scratchpad -X stuff "cd ../jupyterScratchpad^M"
+# sessionname denoUtils
 
+screen -t notebooks zsh -c 'cd  ../../; exec zsh'
+
+screen -t denoUtils
+
+# screen -t docker zsh -c 'cd ../docker_jupyter-ijavascript-utils; exec zsh'
+
+screen -t scratchpad zsh -c 'cd ../../jupyterScratchpad; exec zsh'
+
+# Prefills the prompt. The original stuff string has no trailing ^M (Enter).
 screen -t lint
-sleep 1
-screen -p lint -X stuff "deno run lint:watch"
-#sleep 1
+stuff "deno run lint:watch"
+
+# Prefills the prompt. The original stuff string has no trailing ^M (Enter).
 screen -t test
-sleep 1
-screen -p test -X stuff "deno run test:watch"
-#sleep 1
+stuff "deno run test:watch"
+
+# agent
+screen -t agent
+
 screen -t debug
-sleep 1
 
-screen -t ijsUtils
-sleep 1
-screen -p ijsUtils -X stuff "cd ../jupyter-ijavascript-utils^M"
+screen -t ijsUtils zsh -c 'cd ../../_nodejs/jupyter-ijavascript-utils; exec zsh'
 
+screen -t server 10 zsh -c 'cd ../../; exec zsh'
+# Prefills the prompt. The original stuff string has no trailing ^M (Enter).
+stuff "jupyter lab"
 
+screen -t plantuml 11
+# Prefills the prompt. The original stuff string has no trailing ^M (Enter).
+stuff "plantuml -picoweb"
 
+# screen -t codeserver 12
+# Prefills the prompt. The original stuff string has no trailing ^M (Enter).
+# stuff "code-server .."
 
+screen -t httpServer 13 zsh -c 'deno run doc; cd ./docs; exec zsh'
+# Prefills the prompt. The original stuff string has no trailing ^M (Enter).
+stuff "http-server ."
 
-screen -t "server" 10
-sleep 1
-screen -p server -X number 10
-#sleep 1
-screen -p server -X stuff "cd ../^Mjupyter lab"
-sleep 1
-screen -t plantuml
-sleep 1
-screen -p plantuml -X number 11
-#sleep 1
-screen -p plantuml -X stuff "plantuml -picoweb"
-#sleep 1
-# screen -t codeserver
-# sleep 1
-# screen -p codeserver -X number 12
-# #sleep 1
-# screen -p codeserver -X stuff "code-server .."
-#sleep 1
-screen -t httpServer
-sleep 1
-screen -p httpServer -X number 13
-#sleep 1
-screen -p httpServer -X stuff "deno run doc^Mcd ./docs^Mhttp-server ."
-#sleep 1
-
-screen -X select 0
-#sleep 1
+select 0
 
 # create layouts
 
-screen -X layout new default
-#sleep 1
-screen -X select denoUtils
-#sleep 1
+layout new default
+select denoUtils
 
-screen -X layout new test
-sleep 1
-screen -X select test
-#sleep 1
-screen -X split -h
-#sleep 1
-screen -X resize 60%
-#sleep 1
-screen -X focus
-#sleep 1
-screen -X select lint
-#sleep 1
+layout new test
+select test
+split -h
+resize 60%
+focus
+select lint
 
-screen -X layout new server
-sleep 1
-screen -X select server
-#sleep 1
-screen -X split -v
-#sleep 1
-screen -X focus right
-#sleep 1
-screen -X select plantuml
-#sleep 1
+layout new server
+select server
+split -v
+focus right
+select plantuml
 
-screen -X layout select default
-sleep 1
+layout select default
 
 # key bindings
 
-# screen -X bindkey -k k1 layout select 0
-# screen -X bindkey -k k2 layout select 1
-# screen -X bindkey -k k3 layout select 2
+# bindkey -k k1 layout select 0
+# bindkey -k k2 layout select 1
+# bindkey -k k3 layout select 2
 
 # sets a screen session for the current project
-screen -X sessionname denoUtils
+sessionname denoUtils
