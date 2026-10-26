@@ -47,6 +47,10 @@
 
 import plantumlEncoder from "plantuml-encoder";
 
+import * as jupyter from './jupyter.ts';
+
+import type {JupyterRenderObject} from './types/jupyter.ts';
+
 /** Output format for PlantUML rendering: 'svg' or 'png' */
 export type PlantUMLFormat = "svg" | "png";
 
@@ -65,21 +69,11 @@ export interface PlantUMLOptions {
 /** Display context: $$.png / $$.svg and console.log */
 interface PlantUMLDisplayContext {
   $$: { 
-    png: (pngBody: string) => void;
-    svg: (svgBody: string) => void
+    png: (pngBody: string) => JupyterRenderObject;
+    svg: (svgBody: string) => JupyterRenderObject
   };
   console: { log: (msg: string) => void };
 }
-
-const JUPYTER_DISPLAY = Symbol.for("Jupyter.display");
-const renderSymbol = function renderSymbol(mimeType: string, value: unknown) {
-  return {
-    [JUPYTER_DISPLAY]() {
-      const obj: Record<string, unknown> = {};
-      obj[mimeType] = value;
-    }
-  };
-};
 
 const CONTEXT:PlantUMLDisplayContext = {
   console: {
@@ -87,10 +81,10 @@ const CONTEXT:PlantUMLDisplayContext = {
   },
   $$: {
     png(pngBody: string) {
-      return renderSymbol("image/png", pngBody);
+      return jupyter.renderMimeType("image/png", pngBody);
     },
     svg(svgBody: string) {
-      return renderSymbol("image/svg+xml", svgBody);
+      return jupyter.renderMimeType("image/svg+xml", svgBody);
     }
   }
 };
@@ -166,13 +160,13 @@ export class PlantUMLController {
    * ```
    * //-- note there should be no space after '@' character
    * //-- ex: '@' + 'startuml' and '@' + 'enduml'
-   * utils.plantuml.generateURL(`@startuml
+   * utils.plantuml.generateURL(`
    *   Alice -> Bob: Authentication Request
    *   Bob --> Alice: Authentication Response
    *
    *   Alice -> Bob: Another authentication Request
    *   Alice <-- Bob: Another authentication Response
-   *   @enduml`);
+   *   `);
    * // 'http://localhost:8080/plantuml/svg/SoWkIImgAStDuNBCoKnELT2rKt3AJx9IS2mjo...'
    * ```
    *
@@ -198,7 +192,7 @@ export class PlantUMLController {
    * ```
    * //-- note there should be no space after '@' character
    * //-- ex: '@' + 'startuml' and '@' + 'enduml'
-   * utils.plantuml.render(`@startuml
+   * await utils.plantuml.render(`@startuml
    *   Alice -> Bob: Authentication Request
    *   Bob --> Alice: Authentication Response
    *
@@ -213,7 +207,7 @@ export class PlantUMLController {
    * @param plantUMLOptions.showURL - whether to show the URL at the bottom (default false)
    * @param plantUMLOptions.debug - whether to provide debugging information (default false)
    */
-  async render(plantUMLText?: string | null, plantUMLOptions?: PlantUMLOptions | null): Promise<void> {
+  async render(plantUMLText?: string | null, plantUMLOptions?: PlantUMLOptions | null): Promise<JupyterRenderObject | undefined> {
     const cleanOptions = plantUMLOptions ?? {};
     let format = cleanOptions.format ?? "svg";
     const { showURL = false, debug = false } = cleanOptions;
@@ -232,11 +226,10 @@ export class PlantUMLController {
     if (format === "png") {
       const buf = await result.arrayBuffer();
       const b64 = arrayBufferToBase64(buf);
-      $$.png(b64);
-      return;
+      return $$.png(b64);
     }
     const svgStr = await result.text();
-    $$.svg(svgStr);
+    return $$.svg(svgStr);
   }
 }
 
